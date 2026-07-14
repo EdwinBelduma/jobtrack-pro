@@ -16,7 +16,6 @@ const crearPostulacion = async (req, res) => {
             mensaje: "Postulación creada correctamente",
             postulacion
         });
-
     } catch (error) {
         res.status(500).json({
             mensaje: "Error al crear la postulación"
@@ -31,7 +30,6 @@ const obtenerPostulaciones = async (req, res) => {
         }).sort({ createdAt: -1 });
 
         res.json(postulaciones);
-
     } catch (error) {
         res.status(500).json({
             mensaje: "Error al obtener postulaciones"
@@ -39,7 +37,63 @@ const obtenerPostulaciones = async (req, res) => {
     }
 };
 
+const actualizarPostulacion = async (req, res) => {
+    try {
+        const postulacion = await Application.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                usuario: req.usuario.id
+            },
+            req.body,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!postulacion) {
+            return res.status(404).json({
+                mensaje: "Postulación no encontrada"
+            });
+        }
+
+        res.json({
+            mensaje: "Postulación actualizada correctamente",
+            postulacion
+        });
+    } catch (error) {
+        res.status(500).json({
+            mensaje: "Error al actualizar la postulación"
+        });
+    }
+};
+
+const eliminarPostulacion = async (req, res) => {
+    try {
+        const postulacion = await Application.findOneAndDelete({
+            _id: req.params.id,
+            usuario: req.usuario.id
+        });
+
+        if (!postulacion) {
+            return res.status(404).json({
+                mensaje: "Postulación no encontrada"
+            });
+        }
+
+        res.json({
+            mensaje: "Postulación eliminada correctamente"
+        });
+    } catch (error) {
+        res.status(500).json({
+            mensaje: "Error al eliminar la postulación"
+        });
+    }
+};
+
 module.exports = {
     crearPostulacion,
-    obtenerPostulaciones
+    obtenerPostulaciones,
+    actualizarPostulacion,
+    eliminarPostulacion
 };
