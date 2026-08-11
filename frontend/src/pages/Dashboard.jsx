@@ -1,6 +1,19 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Postulaciones from "./Postulaciones";
+import Calendario from "./Calendario";
+import Empresas from "./Empresas";
+import Perfil from "./Perfil";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 
 import {
   BriefcaseBusiness,
@@ -29,8 +42,33 @@ function Dashboard() {
     rechazadas: 0
   });
 
+  const [proximasEntrevistas, setProximasEntrevistas] = useState([]);
+
   const usuario = JSON.parse(localStorage.getItem("usuario"));
   const token = localStorage.getItem("token");
+
+  const datosGrafico = [
+    {
+      nombre: "Enviadas",
+      cantidad: stats.enviadas || 0
+    },
+    {
+      nombre: "Entrevistas",
+      cantidad: stats.entrevistas || 0
+    },
+    {
+      nombre: "Pruebas",
+      cantidad: stats.pruebasTecnicas || 0
+    },
+    {
+      nombre: "Contratado",
+      cantidad: stats.contratadas || 0
+    },
+    {
+      nombre: "Rechazadas",
+      cantidad: stats.rechazadas || 0
+    }
+  ];
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
@@ -50,8 +88,47 @@ function Dashboard() {
       }
     };
 
+    const cargarEntrevistas = async () => {
+      try {
+        const respuesta = await axios.get(
+          "http://localhost:5000/api/applications",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        const ahora = new Date();
+
+        const entrevistas = respuesta.data
+          .filter((postulacion) => {
+            if (!postulacion.fechaEntrevista) {
+              return false;
+            }
+
+            const fecha = new Date(postulacion.fechaEntrevista);
+
+            return fecha >= ahora;
+          })
+          .sort(
+            (a, b) =>
+              new Date(a.fechaEntrevista) -
+              new Date(b.fechaEntrevista)
+          )
+          .slice(0, 3);
+
+        setProximasEntrevistas(entrevistas);
+
+      } catch (error) {
+        console.error("Error al cargar entrevistas:", error);
+      }
+    };
+
     cargarEstadisticas();
-  }, [token]);
+    cargarEntrevistas();
+
+  }, [token, vista]);
 
   const cerrarSesion = () => {
     localStorage.removeItem("token");
@@ -102,16 +179,22 @@ function Dashboard() {
           <MenuItem
             icono={<CalendarDays size={20} />}
             texto="Calendario"
+            activo={vista === "calendario"}
+            onClick={() => setVista("calendario")}
           />
 
           <MenuItem
             icono={<Building2 size={20} />}
             texto="Empresas"
+            activo={vista === "empresas"}
+            onClick={() => setVista("empresas")}
           />
 
           <MenuItem
             icono={<User size={20} />}
             texto="Perfil"
+            activo={vista === "perfil"}
+            onClick={() => setVista("perfil")}
           />
 
           <MenuItem
@@ -139,6 +222,16 @@ function Dashboard() {
 
         {vista === "postulaciones" ? (
           <Postulaciones />
+
+        ) : vista === "calendario" ? (
+          <Calendario />
+
+        ) : vista === "empresas" ? (
+          <Empresas />
+
+        ) : vista === "perfil" ? (
+          <Perfil />
+
         ) : (
           <div className="p-6 md:p-8">
 
@@ -147,6 +240,7 @@ function Dashboard() {
               <header className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-center">
 
                 <div>
+
                   <p className="text-sm font-medium text-blue-600">
                     Dashboard
                   </p>
@@ -158,6 +252,7 @@ function Dashboard() {
                   <p className="mt-2 text-slate-500">
                     Aquí tienes el resumen de tu búsqueda laboral.
                   </p>
+
                 </div>
 
                 <button
@@ -213,27 +308,144 @@ function Dashboard() {
                   </h3>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Aquí mostraremos el gráfico de tu progreso.
+                    Distribución de tus procesos laborales por estado.
                   </p>
 
-                  <div className="mt-6 flex h-64 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
-                    Próximamente: gráfico de postulaciones
+                  <div className="mt-6 h-72 w-full">
+
+                    <ResponsiveContainer width="100%" height="100%">
+
+                      <BarChart data={datosGrafico}>
+
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                        />
+
+                        <XAxis
+                          dataKey="nombre"
+                          tickLine={false}
+                          axisLine={false}
+                        />
+
+                        <YAxis
+                          allowDecimals={false}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+
+                        <Tooltip />
+
+                        <Bar
+                          dataKey="cantidad"
+                          fill="#2563eb"
+                          radius={[8, 8, 0, 0]}
+                        />
+
+                      </BarChart>
+
+                    </ResponsiveContainer>
+
                   </div>
 
                 </div>
 
                 <div className="rounded-2xl bg-white p-6 shadow-sm">
 
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Próximas entrevistas
-                  </h3>
+                  <div className="flex items-center justify-between gap-3">
 
-                  <p className="mt-1 text-sm text-slate-500">
-                    Tus entrevistas programadas aparecerán aquí.
-                  </p>
+                    <div>
 
-                  <div className="mt-6 rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-400">
-                    Sin entrevistas próximas
+                      <h3 className="text-lg font-bold text-slate-900">
+                        Próximas entrevistas
+                      </h3>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        Tus entrevistas programadas.
+                      </p>
+
+                    </div>
+
+                    <button
+                      onClick={() => setVista("calendario")}
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      Ver todas
+                    </button>
+
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+
+                    {proximasEntrevistas.length > 0 ? (
+
+                      proximasEntrevistas.map((entrevista) => (
+
+                        <div
+                          key={entrevista._id}
+                          className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                        >
+
+                          <div className="flex items-start justify-between gap-3">
+
+                            <div>
+
+                              <p className="font-semibold text-slate-900">
+                                {entrevista.empresa}
+                              </p>
+
+                              <p className="mt-1 text-sm text-slate-500">
+                                {entrevista.cargo}
+                              </p>
+
+                            </div>
+
+                            <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
+                              <CalendarDays size={18} />
+                            </div>
+
+                          </div>
+
+                          <div className="mt-4 border-t border-slate-200 pt-3">
+
+                            <p className="text-sm font-medium text-slate-700">
+
+                              {new Date(
+                                entrevista.fechaEntrevista
+                              ).toLocaleDateString("es-EC", {
+                                weekday: "short",
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric"
+                              })}
+
+                            </p>
+
+                            <p className="mt-1 text-sm text-slate-500">
+
+                              {new Date(
+                                entrevista.fechaEntrevista
+                              ).toLocaleTimeString("es-EC", {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                      ))
+
+                    ) : (
+
+                      <div className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-400">
+                        Sin entrevistas próximas
+                      </div>
+
+                    )}
+
                   </div>
 
                 </div>
