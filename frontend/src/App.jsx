@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import Dashboard from "./pages/Dashboard";
+import Registro from "./pages/Registro";
 
 import {
   BriefcaseBusiness,
   LockKeyhole,
   Mail,
-  LoaderCircle
+  LoaderCircle,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 function App() {
@@ -15,9 +18,24 @@ function App() {
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
 
+  const [mostrarRegistro, setMostrarRegistro] = useState(false);
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+
   const [logueado, setLogueado] = useState(
     !!localStorage.getItem("token")
   );
+
+  useEffect(() => {
+    const configuracionGuardada = JSON.parse(
+      localStorage.getItem("configuracion")
+    );
+
+    if (configuracionGuardada?.tema === "oscuro") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   const iniciarSesion = async (e) => {
     e.preventDefault();
@@ -34,7 +52,10 @@ function App() {
         }
       );
 
-      localStorage.setItem("token", respuesta.data.token);
+      localStorage.setItem(
+        "token",
+        respuesta.data.token
+      );
 
       localStorage.setItem(
         "usuario",
@@ -52,21 +73,31 @@ function App() {
           "Correo o contraseña incorrectos"
         );
       } else {
-        setMensaje("No se pudo conectar con el servidor");
+        setMensaje(
+          "No se pudo conectar con el servidor"
+        );
       }
     } finally {
       setCargando(false);
     }
   };
 
-  // Si el usuario ya inició sesión, mostramos el Dashboard
   if (logueado) {
     return <Dashboard />;
   }
 
-  return (
-    <main className="min-h-screen bg-slate-100 lg:grid lg:grid-cols-2">
+  if (mostrarRegistro) {
+    return (
+      <Registro
+        volverLogin={() => setMostrarRegistro(false)}
+      />
+    );
+  }
 
+  return (
+    <main className="min-h-screen bg-slate-100 transition-colors dark:bg-slate-900 lg:grid lg:grid-cols-2">
+
+      {/* LADO IZQUIERDO */}
       <section className="hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
 
         <div className="flex items-center gap-3">
@@ -88,6 +119,7 @@ function App() {
         </div>
 
         <div>
+
           <h2 className="max-w-xl text-5xl font-bold leading-tight">
             Convierte tu búsqueda de empleo en un proceso organizado.
           </h2>
@@ -96,6 +128,7 @@ function App() {
             Gestiona empresas, entrevistas, pruebas técnicas,
             contactos y estadísticas desde un solo lugar.
           </p>
+
         </div>
 
         <p className="text-sm text-slate-500">
@@ -104,9 +137,10 @@ function App() {
 
       </section>
 
+      {/* LOGIN */}
       <section className="flex min-h-screen items-center justify-center p-6">
 
-        <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+        <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl transition-colors dark:bg-slate-800">
 
           <div className="mb-8 lg:hidden">
 
@@ -116,7 +150,7 @@ function App() {
                 <BriefcaseBusiness size={24} />
               </div>
 
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                 JobTrack Pro
               </h1>
 
@@ -124,11 +158,11 @@ function App() {
 
           </div>
 
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
             Iniciar sesión
           </h2>
 
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-slate-500 dark:text-slate-400">
             Ingresa tus datos para acceder al panel.
           </p>
 
@@ -137,13 +171,14 @@ function App() {
             className="mt-8 space-y-5"
           >
 
+            {/* CORREO */}
             <div>
 
-              <label className="mb-2 block text-sm font-semibold text-slate-700">
+              <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Correo electrónico
               </label>
 
-              <div className="flex items-center rounded-xl border border-slate-300 px-4 focus-within:border-blue-600">
+              <div className="flex items-center rounded-xl border border-slate-300 px-4 focus-within:border-blue-600 dark:border-slate-600">
 
                 <Mail
                   size={19}
@@ -153,23 +188,26 @@ function App() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
                   placeholder="edwin@test.com"
                   required
-                  className="w-full border-0 bg-transparent px-3 py-3.5 outline-none"
+                  className="w-full border-0 bg-transparent px-3 py-3.5 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
                 />
 
               </div>
 
             </div>
 
+            {/* CONTRASEÑA */}
             <div>
 
-              <label className="mb-2 block text-sm font-semibold text-slate-700">
+              <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Contraseña
               </label>
 
-              <div className="flex items-center rounded-xl border border-slate-300 px-4 focus-within:border-blue-600">
+              <div className="flex items-center rounded-xl border border-slate-300 px-4 focus-within:border-blue-600 dark:border-slate-600">
 
                 <LockKeyhole
                   size={19}
@@ -177,35 +215,59 @@ function App() {
                 />
 
                 <input
-                  type="password"
+                  type={mostrarPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
                   placeholder="••••••••"
                   required
-                  className="w-full border-0 bg-transparent px-3 py-3.5 outline-none"
+                  className="w-full border-0 bg-transparent px-3 py-3.5 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
                 />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMostrarPassword(!mostrarPassword)
+                  }
+                  className="text-slate-400 transition hover:text-blue-600 dark:hover:text-blue-400"
+                  title={
+                    mostrarPassword
+                      ? "Ocultar contraseña"
+                      : "Mostrar contraseña"
+                  }
+                >
+                  {mostrarPassword ? (
+                    <EyeOff size={19} />
+                  ) : (
+                    <Eye size={19} />
+                  )}
+                </button>
 
               </div>
 
             </div>
 
+            {/* MENSAJE */}
             {mensaje && (
               <div
                 className={`rounded-xl p-3 text-sm ${
                   mensaje === "Inicio de sesión exitoso"
-                    ? "bg-green-50 text-green-700"
-                    : "bg-red-50 text-red-700"
+                    ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
+                    : "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
                 }`}
               >
                 {mensaje}
               </div>
             )}
 
+            {/* BOTÓN LOGIN */}
             <button
               type="submit"
               disabled={cargando}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
+
               {cargando ? (
                 <>
                   <LoaderCircle
@@ -218,15 +280,24 @@ function App() {
               ) : (
                 "Ingresar"
               )}
+
             </button>
 
           </form>
 
-          <p className="mt-8 text-center text-sm text-slate-500">
+          {/* REGISTRO */}
+          <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+
             ¿Todavía no tienes una cuenta?{" "}
-            <button className="font-semibold text-blue-600">
+
+            <button
+              type="button"
+              onClick={() => setMostrarRegistro(true)}
+              className="font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
               Crear cuenta
             </button>
+
           </p>
 
         </div>

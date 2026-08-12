@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
+
 import Postulaciones from "./Postulaciones";
 import Calendario from "./Calendario";
 import Empresas from "./Empresas";
 import Perfil from "./Perfil";
+import Configuracion from "./Configuracion";
 
 import {
   BarChart,
@@ -45,7 +47,6 @@ function Dashboard() {
   const [proximasEntrevistas, setProximasEntrevistas] = useState([]);
 
   const usuario = JSON.parse(localStorage.getItem("usuario"));
-  const token = localStorage.getItem("token");
 
   const datosGrafico = [
     {
@@ -73,30 +74,23 @@ function Dashboard() {
   useEffect(() => {
     const cargarEstadisticas = async () => {
       try {
-        const respuesta = await axios.get(
-          "http://localhost:5000/api/applications/stats",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+        const respuesta = await api.get(
+          "/applications/stats"
         );
 
         setStats(respuesta.data);
       } catch (error) {
-        console.error("Error al cargar estadísticas:", error);
+        console.error(
+          "Error al cargar estadísticas:",
+          error
+        );
       }
     };
 
     const cargarEntrevistas = async () => {
       try {
-        const respuesta = await axios.get(
-          "http://localhost:5000/api/applications",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+        const respuesta = await api.get(
+          "/applications"
         );
 
         const ahora = new Date();
@@ -107,7 +101,9 @@ function Dashboard() {
               return false;
             }
 
-            const fecha = new Date(postulacion.fechaEntrevista);
+            const fecha = new Date(
+              postulacion.fechaEntrevista
+            );
 
             return fecha >= ahora;
           })
@@ -121,14 +117,17 @@ function Dashboard() {
         setProximasEntrevistas(entrevistas);
 
       } catch (error) {
-        console.error("Error al cargar entrevistas:", error);
+        console.error(
+          "Error al cargar entrevistas:",
+          error
+        );
       }
     };
 
     cargarEstadisticas();
     cargarEntrevistas();
 
-  }, [token, vista]);
+  }, [vista]);
 
   const cerrarSesion = () => {
     localStorage.removeItem("token");
@@ -138,7 +137,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex min-h-screen bg-slate-100 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white">
 
       <aside className="hidden w-64 flex-col bg-slate-950 text-white lg:flex">
 
@@ -200,6 +199,8 @@ function Dashboard() {
           <MenuItem
             icono={<Settings size={20} />}
             texto="Configuración"
+            activo={vista === "configuracion"}
+            onClick={() => setVista("configuracion")}
           />
 
         </nav>
@@ -232,8 +233,11 @@ function Dashboard() {
         ) : vista === "perfil" ? (
           <Perfil />
 
+        ) : vista === "configuracion" ? (
+          <Configuracion />
+
         ) : (
-          <div className="p-6 md:p-8">
+          <div className="p-6 transition-colors dark:bg-slate-900 md:p-8">
 
             <div className="mx-auto max-w-7xl">
 
@@ -241,15 +245,15 @@ function Dashboard() {
 
                 <div>
 
-                  <p className="text-sm font-medium text-blue-600">
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                     Dashboard
                   </p>
 
-                  <h2 className="mt-1 text-3xl font-bold text-slate-900">
+                  <h2 className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
                     Hola, {usuario?.nombre || "Usuario"} 👋
                   </h2>
 
-                  <p className="mt-2 text-slate-500">
+                  <p className="mt-2 text-slate-500 dark:text-slate-400">
                     Aquí tienes el resumen de tu búsqueda laboral.
                   </p>
 
@@ -301,13 +305,13 @@ function Dashboard() {
 
               <section className="mt-8 grid gap-6 lg:grid-cols-3">
 
-                <div className="rounded-2xl bg-white p-6 shadow-sm lg:col-span-2">
+                <div className="rounded-2xl bg-white p-6 shadow-sm transition-colors dark:bg-slate-800 lg:col-span-2">
 
-                  <h3 className="text-lg font-bold text-slate-900">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                     Actividad de postulaciones
                   </h3>
 
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Distribución de tus procesos laborales por estado.
                   </p>
 
@@ -350,17 +354,17 @@ function Dashboard() {
 
                 </div>
 
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <div className="rounded-2xl bg-white p-6 shadow-sm transition-colors dark:bg-slate-800">
 
                   <div className="flex items-center justify-between gap-3">
 
                     <div>
 
-                      <h3 className="text-lg font-bold text-slate-900">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                         Próximas entrevistas
                       </h3>
 
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         Tus entrevistas programadas.
                       </p>
 
@@ -368,7 +372,7 @@ function Dashboard() {
 
                     <button
                       onClick={() => setVista("calendario")}
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
                     >
                       Ver todas
                     </button>
@@ -383,52 +387,58 @@ function Dashboard() {
 
                         <div
                           key={entrevista._id}
-                          className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                          className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors dark:border-slate-700 dark:bg-slate-700"
                         >
 
                           <div className="flex items-start justify-between gap-3">
 
                             <div>
 
-                              <p className="font-semibold text-slate-900">
+                              <p className="font-semibold text-slate-900 dark:text-white">
                                 {entrevista.empresa}
                               </p>
 
-                              <p className="mt-1 text-sm text-slate-500">
+                              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                                 {entrevista.cargo}
                               </p>
 
                             </div>
 
-                            <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
+                            <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-slate-600 dark:text-blue-400">
                               <CalendarDays size={18} />
                             </div>
 
                           </div>
 
-                          <div className="mt-4 border-t border-slate-200 pt-3">
+                          <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-600">
 
-                            <p className="text-sm font-medium text-slate-700">
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
 
                               {new Date(
                                 entrevista.fechaEntrevista
-                              ).toLocaleDateString("es-EC", {
-                                weekday: "short",
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric"
-                              })}
+                              ).toLocaleDateString(
+                                "es-EC",
+                                {
+                                  weekday: "short",
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric"
+                                }
+                              )}
 
                             </p>
 
-                            <p className="mt-1 text-sm text-slate-500">
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
 
                               {new Date(
                                 entrevista.fechaEntrevista
-                              ).toLocaleTimeString("es-EC", {
-                                hour: "2-digit",
-                                minute: "2-digit"
-                              })}
+                              ).toLocaleTimeString(
+                                "es-EC",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                }
+                              )}
 
                             </p>
 
@@ -440,7 +450,7 @@ function Dashboard() {
 
                     ) : (
 
-                      <div className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-400">
+                      <div className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-400 transition-colors dark:bg-slate-700 dark:text-slate-400">
                         Sin entrevistas próximas
                       </div>
 
@@ -465,21 +475,21 @@ function Dashboard() {
 
 function Card({ titulo, valor, icono }) {
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+    <div className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:bg-slate-800">
 
       <div className="mb-5 flex items-center justify-between">
 
-        <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
+        <div className="rounded-xl bg-blue-50 p-3 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
           {icono}
         </div>
 
       </div>
 
-      <p className="text-sm font-medium text-slate-500">
+      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
         {titulo}
       </p>
 
-      <p className="mt-1 text-3xl font-bold text-slate-900">
+      <p className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
         {valor}
       </p>
 

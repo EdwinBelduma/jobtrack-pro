@@ -65,6 +65,38 @@ const applicationSchema = new mongoose.Schema(
             default: null
         },
 
+        plataformaEntrevista: {
+            type: String,
+            enum: [
+                "",
+                "Google Meet",
+                "Zoom",
+                "Microsoft Teams",
+                "Presencial",
+                "Llamada telefónica",
+                "Otra"
+            ],
+            default: ""
+        },
+
+        enlaceEntrevista: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+        contactoEntrevista: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+        notasEntrevista: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
         estado: {
             type: String,
             enum: [

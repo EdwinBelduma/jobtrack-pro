@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
+
 import {
   Plus,
   Search,
   Pencil,
   Trash2,
   BriefcaseBusiness,
-  X
+  X,
+  Video,
+  Link as LinkIcon,
+  UserRound
 } from "lucide-react";
 
 function Postulaciones() {
@@ -18,7 +22,7 @@ function Postulaciones() {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [postulacionEditando, setPostulacionEditando] = useState(null);
 
-  const [formulario, setFormulario] = useState({
+  const formularioInicial = {
     empresa: "",
     cargo: "",
     modalidad: "Remoto",
@@ -28,10 +32,14 @@ function Postulaciones() {
     ciudad: "",
     pais: "Ecuador",
     fechaEntrevista: "",
+    plataformaEntrevista: "",
+    enlaceEntrevista: "",
+    contactoEntrevista: "",
+    notasEntrevista: "",
     observaciones: ""
-  });
+  };
 
-  const token = localStorage.getItem("token");
+  const [formulario, setFormulario] = useState(formularioInicial);
 
   useEffect(() => {
     cargarPostulaciones();
@@ -39,14 +47,7 @@ function Postulaciones() {
 
   const cargarPostulaciones = async () => {
     try {
-      const respuesta = await axios.get(
-        "http://localhost:5000/api/applications",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const respuesta = await api.get("/applications");
 
       setPostulaciones(respuesta.data);
     } catch (error) {
@@ -62,18 +63,7 @@ function Postulaciones() {
   };
 
   const limpiarFormulario = () => {
-    setFormulario({
-      empresa: "",
-      cargo: "",
-      modalidad: "Remoto",
-      estado: "Enviado",
-      prioridad: "Media",
-      salario: "",
-      ciudad: "",
-      pais: "Ecuador",
-      fechaEntrevista: "",
-      observaciones: ""
-    });
+    setFormulario(formularioInicial);
 
     setModoEdicion(false);
     setPostulacionEditando(null);
@@ -102,7 +92,20 @@ function Postulaciones() {
         ? postulacion.fechaEntrevista.slice(0, 16)
         : "",
 
-      observaciones: postulacion.observaciones || ""
+      plataformaEntrevista:
+        postulacion.plataformaEntrevista || "",
+
+      enlaceEntrevista:
+        postulacion.enlaceEntrevista || "",
+
+      contactoEntrevista:
+        postulacion.contactoEntrevista || "",
+
+      notasEntrevista:
+        postulacion.notasEntrevista || "",
+
+      observaciones:
+        postulacion.observaciones || ""
     });
 
     setMostrarFormulario(true);
@@ -129,24 +132,14 @@ function Postulaciones() {
       };
 
       if (modoEdicion) {
-        await axios.put(
-          `http://localhost:5000/api/applications/${postulacionEditando}`,
-          datos,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+        await api.put(
+          `/applications/${postulacionEditando}`,
+          datos
         );
       } else {
-        await axios.post(
-          "http://localhost:5000/api/applications",
-          datos,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+        await api.post(
+          "/applications",
+          datos
         );
       }
 
@@ -154,7 +147,10 @@ function Postulaciones() {
       cargarPostulaciones();
 
     } catch (error) {
-      console.error("Error al guardar postulación:", error);
+      console.error(
+        "Error al guardar postulación:",
+        error
+      );
 
       alert(
         error.response?.data?.mensaje ||
@@ -171,13 +167,8 @@ function Postulaciones() {
     if (!confirmar) return;
 
     try {
-      await axios.delete(
-        `http://localhost:5000/api/applications/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+      await api.delete(
+        `/applications/${id}`
       );
 
       cargarPostulaciones();
@@ -197,30 +188,33 @@ function Postulaciones() {
         .includes(busqueda.toLowerCase());
 
     const coincideEstado =
-      estado === "" || postulacion.estado === estado;
+      estado === "" ||
+      postulacion.estado === estado;
 
     return coincideBusqueda && coincideEstado;
   });
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6 md:p-8">
+    <div className="min-h-screen bg-slate-100 p-6 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white md:p-8">
 
       <div className="mx-auto max-w-7xl">
 
         <header className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-center">
 
           <div>
-            <p className="text-sm font-medium text-blue-600">
+
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
               Gestión
             </p>
 
-            <h1 className="mt-1 text-3xl font-bold text-slate-900">
+            <h1 className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
               Postulaciones
             </h1>
 
-            <p className="mt-2 text-slate-500">
+            <p className="mt-2 text-slate-500 dark:text-slate-400">
               Administra todos tus procesos de selección.
             </p>
+
           </div>
 
           <button
@@ -233,55 +227,108 @@ function Postulaciones() {
 
         </header>
 
-        <section className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-sm md:flex-row">
+        <section className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-sm transition-colors dark:bg-slate-800 md:flex-row">
 
-          <div className="flex flex-1 items-center rounded-xl border border-slate-300 px-4">
+          <div className="flex flex-1 items-center rounded-xl border border-slate-300 px-4 dark:border-slate-600">
 
-            <Search size={19} className="text-slate-400" />
+            <Search
+              size={19}
+              className="text-slate-400"
+            />
 
             <input
               type="text"
               placeholder="Buscar empresa o cargo..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full border-0 bg-transparent px-3 py-3 outline-none"
+              onChange={(e) =>
+                setBusqueda(e.target.value)
+              }
+              className="w-full border-0 bg-transparent px-3 py-3 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
             />
 
           </div>
 
           <select
             value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none"
+            onChange={(e) =>
+              setEstado(e.target.value)
+            }
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           >
-            <option value="">Todos los estados</option>
-            <option value="Enviado">Enviado</option>
-            <option value="En revisión">En revisión</option>
-            <option value="Prueba Técnica">Prueba Técnica</option>
-            <option value="Entrevista">Entrevista</option>
-            <option value="Oferta">Oferta</option>
-            <option value="Contratado">Contratado</option>
-            <option value="Rechazado">Rechazado</option>
+            <option value="">
+              Todos los estados
+            </option>
+
+            <option value="Enviado">
+              Enviado
+            </option>
+
+            <option value="En revisión">
+              En revisión
+            </option>
+
+            <option value="Prueba Técnica">
+              Prueba Técnica
+            </option>
+
+            <option value="Entrevista">
+              Entrevista
+            </option>
+
+            <option value="Oferta">
+              Oferta
+            </option>
+
+            <option value="Contratado">
+              Contratado
+            </option>
+
+            <option value="Rechazado">
+              Rechazado
+            </option>
+
           </select>
 
         </section>
 
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl bg-white shadow-sm transition-colors dark:bg-slate-800">
 
           <div className="overflow-x-auto">
 
             <table className="w-full">
 
-              <thead className="border-b border-slate-200 bg-slate-50">
+              <thead className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-700">
 
-                <tr className="text-left text-sm text-slate-500">
-                  <th className="px-6 py-4">Empresa</th>
-                  <th className="px-6 py-4">Cargo</th>
-                  <th className="px-6 py-4">Modalidad</th>
-                  <th className="px-6 py-4">Estado</th>
-                  <th className="px-6 py-4">Prioridad</th>
-                  <th className="px-6 py-4">Entrevista</th>
-                  <th className="px-6 py-4">Acciones</th>
+                <tr className="text-left text-sm text-slate-500 dark:text-slate-300">
+
+                  <th className="px-6 py-4">
+                    Empresa
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Cargo
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Modalidad
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Estado
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Prioridad
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Entrevista
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Acciones
+                  </th>
+
                 </tr>
 
               </thead>
@@ -289,95 +336,113 @@ function Postulaciones() {
               <tbody>
 
                 {postulacionesFiltradas.length > 0 ? (
-                  postulacionesFiltradas.map((postulacion) => (
 
-                    <tr
-                      key={postulacion._id}
-                      className="border-b border-slate-100 transition hover:bg-slate-50"
-                    >
+                  postulacionesFiltradas.map(
+                    (postulacion) => (
 
-                      <td className="px-6 py-5">
+                      <tr
+                        key={postulacion._id}
+                        className="border-b border-slate-100 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/70"
+                      >
 
-                        <div className="flex items-center gap-3">
+                        <td className="px-6 py-5">
 
-                          <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600">
-                            <BriefcaseBusiness size={20} />
+                          <div className="flex items-center gap-3">
+
+                            <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
+
+                              <BriefcaseBusiness
+                                size={20}
+                              />
+
+                            </div>
+
+                            <span className="font-semibold text-slate-900 dark:text-white">
+                              {postulacion.empresa}
+                            </span>
+
                           </div>
 
-                          <span className="font-semibold text-slate-900">
-                            {postulacion.empresa}
+                        </td>
+
+                        <td className="px-6 py-5 text-slate-600 dark:text-slate-300">
+                          {postulacion.cargo}
+                        </td>
+
+                        <td className="px-6 py-5 text-slate-600 dark:text-slate-300">
+                          {postulacion.modalidad ||
+                            "No especificada"}
+                        </td>
+
+                        <td className="px-6 py-5">
+
+                          <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                            {postulacion.estado}
                           </span>
 
-                        </div>
+                        </td>
 
-                      </td>
+                        <td className="px-6 py-5 text-slate-600 dark:text-slate-300">
+                          {postulacion.prioridad ||
+                            "Media"}
+                        </td>
 
-                      <td className="px-6 py-5 text-slate-600">
-                        {postulacion.cargo}
-                      </td>
+                        <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-300">
 
-                      <td className="px-6 py-5 text-slate-600">
-                        {postulacion.modalidad || "No especificada"}
-                      </td>
+                          {postulacion.fechaEntrevista
+                            ? new Date(
+                                postulacion.fechaEntrevista
+                              ).toLocaleString(
+                                "es-EC"
+                              )
+                            : "Sin fecha"}
 
-                      <td className="px-6 py-5">
+                        </td>
 
-                        <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                          {postulacion.estado}
-                        </span>
+                        <td className="px-6 py-5">
 
-                      </td>
+                          <div className="flex gap-2">
 
-                      <td className="px-6 py-5 text-slate-600">
-                        {postulacion.prioridad || "Media"}
-                      </td>
+                            <button
+                              onClick={() =>
+                                abrirEdicion(
+                                  postulacion
+                                )
+                              }
+                              className="rounded-lg p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-blue-400"
+                              title="Editar"
+                            >
+                              <Pencil size={18} />
+                            </button>
 
-                      <td className="px-6 py-5 text-sm text-slate-600">
+                            <button
+                              onClick={() =>
+                                eliminarPostulacion(
+                                  postulacion._id
+                                )
+                              }
+                              className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600 dark:text-slate-300 dark:hover:bg-red-950 dark:hover:text-red-400"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={18} />
+                            </button>
 
-                        {postulacion.fechaEntrevista
-                          ? new Date(
-                              postulacion.fechaEntrevista
-                            ).toLocaleString("es-EC")
-                          : "Sin fecha"}
+                          </div>
 
-                      </td>
+                        </td>
 
-                      <td className="px-6 py-5">
+                      </tr>
 
-                        <div className="flex gap-2">
+                    )
+                  )
 
-                          <button
-                            onClick={() => abrirEdicion(postulacion)}
-                            className="rounded-lg p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
-                            title="Editar"
-                          >
-                            <Pencil size={18} />
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              eliminarPostulacion(postulacion._id)
-                            }
-                            className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-                            title="Eliminar"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-
-                        </div>
-
-                      </td>
-
-                    </tr>
-
-                  ))
                 ) : (
 
                   <tr>
 
                     <td
                       colSpan="7"
-                      className="px-6 py-16 text-center text-slate-400"
+                      className="px-6 py-16 text-center text-slate-400 dark:text-slate-500"
                     >
                       No hay postulaciones para mostrar.
                     </td>
@@ -398,21 +463,21 @@ function Postulaciones() {
 
       {mostrarFormulario && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
 
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-7 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-7 text-slate-900 shadow-2xl transition-colors dark:bg-slate-800 dark:text-white">
 
             <div className="mb-6 flex items-center justify-between">
 
               <div>
 
-                <p className="text-sm font-medium text-blue-600">
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                   {modoEdicion
                     ? "Editar postulación"
                     : "Nueva postulación"}
                 </p>
 
-                <h2 className="text-2xl font-bold text-slate-900">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                   {modoEdicion
                     ? "Actualizar proceso laboral"
                     : "Registrar proceso laboral"}
@@ -422,7 +487,7 @@ function Postulaciones() {
 
               <button
                 onClick={cerrarFormulario}
-                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"
+                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 <X size={22} />
               </button>
@@ -452,66 +517,45 @@ function Postulaciones() {
                 required
               />
 
-              <div>
+              <SelectCampo
+                label="Modalidad"
+                name="modalidad"
+                value={formulario.modalidad}
+                onChange={manejarCambio}
+                opciones={[
+                  "Remoto",
+                  "Híbrido",
+                  "Presencial"
+                ]}
+              />
 
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Modalidad
-                </label>
+              <SelectCampo
+                label="Estado"
+                name="estado"
+                value={formulario.estado}
+                onChange={manejarCambio}
+                opciones={[
+                  "Enviado",
+                  "En revisión",
+                  "Prueba Técnica",
+                  "Entrevista",
+                  "Oferta",
+                  "Contratado",
+                  "Rechazado"
+                ]}
+              />
 
-                <select
-                  name="modalidad"
-                  value={formulario.modalidad}
-                  onChange={manejarCambio}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-                >
-                  <option value="Remoto">Remoto</option>
-                  <option value="Híbrido">Híbrido</option>
-                  <option value="Presencial">Presencial</option>
-                </select>
-
-              </div>
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Estado
-                </label>
-
-                <select
-                  name="estado"
-                  value={formulario.estado}
-                  onChange={manejarCambio}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-                >
-                  <option value="Enviado">Enviado</option>
-                  <option value="En revisión">En revisión</option>
-                  <option value="Prueba Técnica">Prueba Técnica</option>
-                  <option value="Entrevista">Entrevista</option>
-                  <option value="Oferta">Oferta</option>
-                  <option value="Contratado">Contratado</option>
-                  <option value="Rechazado">Rechazado</option>
-                </select>
-
-              </div>
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Prioridad
-                </label>
-
-                <select
-                  name="prioridad"
-                  value={formulario.prioridad}
-                  onChange={manejarCambio}
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
-                >
-                  <option value="Alta">Alta</option>
-                  <option value="Media">Media</option>
-                  <option value="Baja">Baja</option>
-                </select>
-
-              </div>
+              <SelectCampo
+                label="Prioridad"
+                name="prioridad"
+                value={formulario.prioridad}
+                onChange={manejarCambio}
+                opciones={[
+                  "Alta",
+                  "Media",
+                  "Baja"
+                ]}
+              />
 
               <Campo
                 label="Salario"
@@ -538,6 +582,22 @@ function Postulaciones() {
                 placeholder="Ecuador"
               />
 
+              <div className="md:col-span-2 mt-2 border-t border-slate-200 pt-6 dark:border-slate-700">
+
+                <div className="mb-5">
+
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    Información de entrevista
+                  </p>
+
+                  <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
+                    Datos de la entrevista
+                  </h3>
+
+                </div>
+
+              </div>
+
               <Campo
                 label="Fecha de entrevista"
                 name="fechaEntrevista"
@@ -546,10 +606,72 @@ function Postulaciones() {
                 onChange={manejarCambio}
               />
 
+              <SelectCampo
+                label="Plataforma"
+                name="plataformaEntrevista"
+                value={formulario.plataformaEntrevista}
+                onChange={manejarCambio}
+                opciones={[
+                  "",
+                  "Google Meet",
+                  "Zoom",
+                  "Microsoft Teams",
+                  "Presencial",
+                  "Llamada telefónica",
+                  "Otra"
+                ]}
+                opcionVacia="Seleccionar plataforma"
+              />
+
+              <CampoIcono
+                label="Enlace de entrevista"
+                name="enlaceEntrevista"
+                type="url"
+                value={formulario.enlaceEntrevista}
+                onChange={manejarCambio}
+                placeholder="https://meet.google.com/..."
+                icono={<LinkIcon size={18} />}
+              />
+
+              <CampoIcono
+                label="Contacto / entrevistador"
+                name="contactoEntrevista"
+                value={formulario.contactoEntrevista}
+                onChange={manejarCambio}
+                placeholder="Ej. María López"
+                icono={<UserRound size={18} />}
+              />
+
               <div className="md:col-span-2">
 
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Observaciones
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Notas para la entrevista
+                </label>
+
+                <div className="relative">
+
+                  <Video
+                    size={18}
+                    className="absolute left-4 top-4 text-slate-400"
+                  />
+
+                  <textarea
+                    name="notasEntrevista"
+                    value={formulario.notasEntrevista}
+                    onChange={manejarCambio}
+                    rows="4"
+                    placeholder="Ej. Repasar Node.js, Express, MongoDB y preparar preguntas para el entrevistador..."
+                    className="w-full resize-none rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                  />
+
+                </div>
+
+              </div>
+
+              <div className="md:col-span-2 border-t border-slate-200 pt-5 dark:border-slate-700">
+
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Observaciones generales
                 </label>
 
                 <textarea
@@ -557,8 +679,8 @@ function Postulaciones() {
                   value={formulario.observaciones}
                   onChange={manejarCambio}
                   rows="4"
-                  placeholder="Notas sobre entrevista, prueba técnica, contacto..."
-                  className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+                  placeholder="Notas generales sobre la postulación..."
+                  className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                 />
 
               </div>
@@ -568,7 +690,7 @@ function Postulaciones() {
                 <button
                   type="button"
                   onClick={cerrarFormulario}
-                  className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-600 hover:bg-slate-50"
+                  className="rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
                 >
                   Cancelar
                 </button>
@@ -608,7 +730,7 @@ function Campo({
   return (
     <div>
 
-      <label className="mb-2 block text-sm font-semibold text-slate-700">
+      <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
         {label}
       </label>
 
@@ -619,8 +741,86 @@ function Campo({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
+        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
       />
+
+    </div>
+  );
+}
+
+function CampoIcono({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  icono
+}) {
+  return (
+    <div>
+
+      <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+        {label}
+      </label>
+
+      <div className="flex items-center rounded-xl border border-slate-300 bg-white px-4 focus-within:border-blue-600 dark:border-slate-600 dark:bg-slate-700">
+
+        <span className="text-slate-400">
+          {icono}
+        </span>
+
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="w-full border-0 bg-transparent px-3 py-3 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+        />
+
+      </div>
+
+    </div>
+  );
+}
+
+function SelectCampo({
+  label,
+  name,
+  value,
+  onChange,
+  opciones,
+  opcionVacia
+}) {
+  return (
+    <div>
+
+      <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+        {label}
+      </label>
+
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
+        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+      >
+
+        {opciones.map((opcion) => (
+
+          <option
+            key={opcion || "vacio"}
+            value={opcion}
+          >
+            {opcion === "" && opcionVacia
+              ? opcionVacia
+              : opcion}
+          </option>
+
+        ))}
+
+      </select>
 
     </div>
   );
