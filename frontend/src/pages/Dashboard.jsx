@@ -29,7 +29,10 @@ import {
   FileCode2,
   CheckCircle2,
   XCircle,
-  Plus
+  Plus,
+  Video,
+  ExternalLink,
+  Clock3
 } from "lucide-react";
 
 function Dashboard() {
@@ -101,11 +104,9 @@ function Dashboard() {
               return false;
             }
 
-            const fecha = new Date(
-              postulacion.fechaEntrevista
+            return (
+              new Date(postulacion.fechaEntrevista) >= ahora
             );
-
-            return fecha >= ahora;
           })
           .sort(
             (a, b) =>
@@ -372,7 +373,7 @@ function Dashboard() {
 
                     <button
                       onClick={() => setVista("calendario")}
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      className="shrink-0 text-sm font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       Ver todas
                     </button>
@@ -383,70 +384,120 @@ function Dashboard() {
 
                     {proximasEntrevistas.length > 0 ? (
 
-                      proximasEntrevistas.map((entrevista) => (
+                      proximasEntrevistas.map((entrevista) => {
 
-                        <div
-                          key={entrevista._id}
-                          className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors dark:border-slate-700 dark:bg-slate-700"
-                        >
+                        const alerta = obtenerAlertaEntrevista(
+                          entrevista.fechaEntrevista
+                        );
 
-                          <div className="flex items-start justify-between gap-3">
+                        return (
+                          <div
+                            key={entrevista._id}
+                            className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors dark:border-slate-700 dark:bg-slate-700"
+                          >
 
-                            <div>
+                            <div className="flex items-start justify-between gap-3">
 
-                              <p className="font-semibold text-slate-900 dark:text-white">
-                                {entrevista.empresa}
-                              </p>
+                              <div>
 
-                              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                {entrevista.cargo}
-                              </p>
+                                <p className="font-semibold text-slate-900 dark:text-white">
+                                  {entrevista.empresa}
+                                </p>
+
+                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                  {entrevista.cargo}
+                                </p>
+
+                              </div>
+
+                              <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-slate-600 dark:text-blue-400">
+                                <CalendarDays size={18} />
+                              </div>
 
                             </div>
 
-                            <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-slate-600 dark:text-blue-400">
-                              <CalendarDays size={18} />
+                            <div className="mt-3">
+
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${alerta.clases}`}
+                              >
+                                {alerta.texto}
+                              </span>
+
+                            </div>
+
+                            <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-600">
+
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+
+                                {new Date(
+                                  entrevista.fechaEntrevista
+                                ).toLocaleDateString(
+                                  "es-EC",
+                                  {
+                                    weekday: "short",
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric"
+                                  }
+                                )}
+
+                              </p>
+
+                              <div className="mt-1 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+
+                                <Clock3 size={15} />
+
+                                {new Date(
+                                  entrevista.fechaEntrevista
+                                ).toLocaleTimeString(
+                                  "es-EC",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                  }
+                                )}
+
+                              </div>
+
+                              {entrevista.plataformaEntrevista && (
+
+                                <div className="mt-3 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+
+                                  <Video
+                                    size={16}
+                                    className="shrink-0 text-blue-600 dark:text-blue-400"
+                                  />
+
+                                  <span>
+                                    {entrevista.plataformaEntrevista}
+                                  </span>
+
+                                </div>
+
+                              )}
+
+                              {entrevista.enlaceEntrevista &&
+                                entrevista.plataformaEntrevista !==
+                                  "Presencial" && (
+
+                                <a
+                                  href={entrevista.enlaceEntrevista}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                                >
+                                  <ExternalLink size={16} />
+                                  Abrir reunión
+                                </a>
+
+                              )}
+
                             </div>
 
                           </div>
-
-                          <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-600">
-
-                            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-
-                              {new Date(
-                                entrevista.fechaEntrevista
-                              ).toLocaleDateString(
-                                "es-EC",
-                                {
-                                  weekday: "short",
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric"
-                                }
-                              )}
-
-                            </p>
-
-                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-
-                              {new Date(
-                                entrevista.fechaEntrevista
-                              ).toLocaleTimeString(
-                                "es-EC",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit"
-                                }
-                              )}
-
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                      ))
+                        );
+                      })
 
                     ) : (
 
@@ -473,7 +524,57 @@ function Dashboard() {
   );
 }
 
-function Card({ titulo, valor, icono }) {
+function obtenerAlertaEntrevista(fechaEntrevista) {
+  const ahora = new Date();
+  const entrevista = new Date(fechaEntrevista);
+
+  const hoy = new Date(
+    ahora.getFullYear(),
+    ahora.getMonth(),
+    ahora.getDate()
+  );
+
+  const diaEntrevista = new Date(
+    entrevista.getFullYear(),
+    entrevista.getMonth(),
+    entrevista.getDate()
+  );
+
+  const diferenciaMs =
+    diaEntrevista.getTime() - hoy.getTime();
+
+  const diferenciaDias = Math.round(
+    diferenciaMs / (1000 * 60 * 60 * 24)
+  );
+
+  if (diferenciaDias === 0) {
+    return {
+      texto: "HOY",
+      clases:
+        "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+    };
+  }
+
+  if (diferenciaDias === 1) {
+    return {
+      texto: "MAÑANA",
+      clases:
+        "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+    };
+  }
+
+  return {
+    texto: `EN ${diferenciaDias} DÍAS`,
+    clases:
+      "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+  };
+}
+
+function Card({
+  titulo,
+  valor,
+  icono
+}) {
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:bg-slate-800">
 
