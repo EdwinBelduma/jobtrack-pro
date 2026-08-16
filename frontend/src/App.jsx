@@ -63,7 +63,6 @@ function App() {
       );
 
       setMensaje("Inicio de sesión exitoso");
-
       setLogueado(true);
 
     } catch (error) {
@@ -89,7 +88,9 @@ function App() {
   if (mostrarRegistro) {
     return (
       <Registro
-        volverLogin={() => setMostrarRegistro(false)}
+        volverLogin={() =>
+          setMostrarRegistro(false)
+        }
       />
     );
   }
@@ -98,7 +99,7 @@ function App() {
     <main className="min-h-screen bg-slate-100 transition-colors dark:bg-slate-900 lg:grid lg:grid-cols-2">
 
       {/* LADO IZQUIERDO */}
-      <section className="hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+      <section className="hidden min-h-screen bg-slate-950 p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-12">
 
         <div className="flex items-center gap-3">
 
@@ -120,11 +121,11 @@ function App() {
 
         <div>
 
-          <h2 className="max-w-xl text-5xl font-bold leading-tight">
+          <h2 className="max-w-xl text-4xl font-bold leading-tight xl:text-5xl">
             Convierte tu búsqueda de empleo en un proceso organizado.
           </h2>
 
-          <p className="mt-6 max-w-lg text-lg text-slate-300">
+          <p className="mt-6 max-w-lg text-base text-slate-300 xl:text-lg">
             Gestiona empresas, entrevistas, pruebas técnicas,
             contactos y estadísticas desde un solo lugar.
           </p>
@@ -138,37 +139,46 @@ function App() {
       </section>
 
       {/* LOGIN */}
-      <section className="flex min-h-screen items-center justify-center p-6">
+      <section className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6">
 
-        <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl transition-colors dark:bg-slate-800">
+        <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl transition-colors dark:bg-slate-800 sm:rounded-3xl sm:p-8">
 
-          <div className="mb-8 lg:hidden">
+          {/* LOGO MÓVIL */}
+          <div className="mb-7 lg:hidden">
 
             <div className="flex items-center gap-3">
 
-              <div className="rounded-xl bg-blue-600 p-3 text-white">
-                <BriefcaseBusiness size={24} />
+              <div className="rounded-xl bg-blue-600 p-2.5 text-white sm:p-3">
+                <BriefcaseBusiness size={23} />
               </div>
 
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                JobTrack Pro
-              </h1>
+              <div>
+
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
+                  JobTrack Pro
+                </h1>
+
+                <p className="text-xs text-slate-400">
+                  Career Manager
+                </p>
+
+              </div>
 
             </div>
 
           </div>
 
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
             Iniciar sesión
           </h2>
 
-          <p className="mt-2 text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 sm:text-base">
             Ingresa tus datos para acceder al panel.
           </p>
 
           <form
             onSubmit={iniciarSesion}
-            className="mt-8 space-y-5"
+            className="mt-6 space-y-5 sm:mt-8"
           >
 
             {/* CORREO */}
@@ -178,11 +188,11 @@ function App() {
                 Correo electrónico
               </label>
 
-              <div className="flex items-center rounded-xl border border-slate-300 px-4 focus-within:border-blue-600 dark:border-slate-600">
+              <div className="flex items-center rounded-xl border border-slate-300 px-3 focus-within:border-blue-600 dark:border-slate-600 sm:px-4">
 
                 <Mail
                   size={19}
-                  className="text-slate-400"
+                  className="shrink-0 text-slate-400"
                 />
 
                 <input
@@ -193,7 +203,7 @@ function App() {
                   }
                   placeholder="edwin@test.com"
                   required
-                  className="w-full border-0 bg-transparent px-3 py-3.5 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+                  className="min-w-0 w-full border-0 bg-transparent px-3 py-3.5 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
                 />
 
               </div>
@@ -207,30 +217,36 @@ function App() {
                 Contraseña
               </label>
 
-              <div className="flex items-center rounded-xl border border-slate-300 px-4 focus-within:border-blue-600 dark:border-slate-600">
+              <div className="flex items-center rounded-xl border border-slate-300 px-3 focus-within:border-blue-600 dark:border-slate-600 sm:px-4">
 
                 <LockKeyhole
                   size={19}
-                  className="text-slate-400"
+                  className="shrink-0 text-slate-400"
                 />
 
                 <input
-                  type={mostrarPassword ? "text" : "password"}
+                  type={
+                    mostrarPassword
+                      ? "text"
+                      : "password"
+                  }
                   value={password}
                   onChange={(e) =>
                     setPassword(e.target.value)
                   }
                   placeholder="••••••••"
                   required
-                  className="w-full border-0 bg-transparent px-3 py-3.5 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+                  className="min-w-0 w-full border-0 bg-transparent px-3 py-3.5 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
                 />
 
                 <button
                   type="button"
                   onClick={() =>
-                    setMostrarPassword(!mostrarPassword)
+                    setMostrarPassword(
+                      !mostrarPassword
+                    )
                   }
-                  className="text-slate-400 transition hover:text-blue-600 dark:hover:text-blue-400"
+                  className="shrink-0 rounded-lg p-1 text-slate-400 transition hover:text-blue-600 dark:hover:text-blue-400"
                   title={
                     mostrarPassword
                       ? "Ocultar contraseña"
@@ -250,18 +266,21 @@ function App() {
 
             {/* MENSAJE */}
             {mensaje && (
+
               <div
                 className={`rounded-xl p-3 text-sm ${
-                  mensaje === "Inicio de sesión exitoso"
+                  mensaje ===
+                  "Inicio de sesión exitoso"
                     ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
                     : "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
                 }`}
               >
                 {mensaje}
               </div>
+
             )}
 
-            {/* BOTÓN LOGIN */}
+            {/* BOTÓN */}
             <button
               type="submit"
               disabled={cargando}
@@ -274,7 +293,6 @@ function App() {
                     size={20}
                     className="animate-spin"
                   />
-
                   Ingresando...
                 </>
               ) : (
@@ -286,13 +304,15 @@ function App() {
           </form>
 
           {/* REGISTRO */}
-          <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400 sm:mt-8">
 
             ¿Todavía no tienes una cuenta?{" "}
 
             <button
               type="button"
-              onClick={() => setMostrarRegistro(true)}
+              onClick={() =>
+                setMostrarRegistro(true)
+              }
               className="font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
               Crear cuenta

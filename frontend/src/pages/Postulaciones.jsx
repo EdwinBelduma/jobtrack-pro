@@ -10,13 +10,34 @@ import {
   X,
   Video,
   Link as LinkIcon,
-  UserRound
+  UserRound,
+  Mail,
+  Phone,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  CalendarDays,
+  MapPin,
+  Layers3,
+  Flag
 } from "lucide-react";
 
 function Postulaciones() {
   const [postulaciones, setPostulaciones] = useState([]);
+
   const [busqueda, setBusqueda] = useState("");
   const [estado, setEstado] = useState("");
+  const [modalidadFiltro, setModalidadFiltro] = useState("");
+  const [prioridadFiltro, setPrioridadFiltro] = useState("");
+  const [nivelFiltro, setNivelFiltro] = useState("");
+
+  const [orden, setOrden] = useState("recientes");
+
+  const [paginaActual, setPaginaActual] = useState(1);
+
+  const postulacionesPorPagina = 10;
+
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -26,16 +47,29 @@ function Postulaciones() {
     empresa: "",
     cargo: "",
     modalidad: "Remoto",
+    nivel: "Junior",
     estado: "Enviado",
     prioridad: "Media",
+
     salario: "",
+    moneda: "USD",
+
     ciudad: "",
     pais: "Ecuador",
+
+    tecnologias: "",
+    urlOferta: "",
+
+    contactoRRHH: "",
+    correoRRHH: "",
+    telefonoRRHH: "",
+
     fechaEntrevista: "",
     plataformaEntrevista: "",
     enlaceEntrevista: "",
     contactoEntrevista: "",
     notasEntrevista: "",
+
     observaciones: ""
   };
 
@@ -45,13 +79,27 @@ function Postulaciones() {
     cargarPostulaciones();
   }, []);
 
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [
+    busqueda,
+    estado,
+    modalidadFiltro,
+    prioridadFiltro,
+    nivelFiltro,
+    orden
+  ]);
+
   const cargarPostulaciones = async () => {
     try {
       const respuesta = await api.get("/applications");
 
       setPostulaciones(respuesta.data);
     } catch (error) {
-      console.error("Error al cargar postulaciones:", error);
+      console.error(
+        "Error al cargar postulaciones:",
+        error
+      );
     }
   };
 
@@ -64,9 +112,18 @@ function Postulaciones() {
 
   const limpiarFormulario = () => {
     setFormulario(formularioInicial);
-
     setModoEdicion(false);
     setPostulacionEditando(null);
+  };
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setEstado("");
+    setModalidadFiltro("");
+    setPrioridadFiltro("");
+    setNivelFiltro("");
+    setOrden("recientes");
+    setPaginaActual(1);
   };
 
   const abrirNuevaPostulacion = () => {
@@ -82,15 +139,35 @@ function Postulaciones() {
       empresa: postulacion.empresa || "",
       cargo: postulacion.cargo || "",
       modalidad: postulacion.modalidad || "Remoto",
+      nivel: postulacion.nivel || "Junior",
       estado: postulacion.estado || "Enviado",
       prioridad: postulacion.prioridad || "Media",
-      salario: postulacion.salario || "",
+
+      salario: postulacion.salario ?? "",
+      moneda: postulacion.moneda || "USD",
+
       ciudad: postulacion.ciudad || "",
       pais: postulacion.pais || "Ecuador",
 
-      fechaEntrevista: postulacion.fechaEntrevista
-        ? postulacion.fechaEntrevista.slice(0, 16)
-        : "",
+      tecnologias:
+        postulacion.tecnologias?.join(", ") || "",
+
+      urlOferta:
+        postulacion.urlOferta || "",
+
+      contactoRRHH:
+        postulacion.contactoRRHH || "",
+
+      correoRRHH:
+        postulacion.correoRRHH || "",
+
+      telefonoRRHH:
+        postulacion.telefonoRRHH || "",
+
+      fechaEntrevista:
+        postulacion.fechaEntrevista
+          ? postulacion.fechaEntrevista.slice(0, 16)
+          : "",
 
       plataformaEntrevista:
         postulacion.plataformaEntrevista || "",
@@ -123,9 +200,15 @@ function Postulaciones() {
       const datos = {
         ...formulario,
 
-        salario: formulario.salario
-          ? Number(formulario.salario)
-          : 0,
+        salario:
+          formulario.salario !== ""
+            ? Number(formulario.salario)
+            : 0,
+
+        tecnologias: formulario.tecnologias
+          .split(",")
+          .map((tecnologia) => tecnologia.trim())
+          .filter(Boolean),
 
         fechaEntrevista:
           formulario.fechaEntrevista || null
@@ -144,7 +227,7 @@ function Postulaciones() {
       }
 
       cerrarFormulario();
-      cargarPostulaciones();
+      await cargarPostulaciones();
 
     } catch (error) {
       console.error(
@@ -154,7 +237,7 @@ function Postulaciones() {
 
       alert(
         error.response?.data?.mensaje ||
-          "No se pudo guardar la postulación"
+        "No se pudo guardar la postulación"
       );
     }
   };
@@ -167,35 +250,165 @@ function Postulaciones() {
     if (!confirmar) return;
 
     try {
-      await api.delete(
-        `/applications/${id}`
-      );
-
-      cargarPostulaciones();
+      await api.delete(`/applications/${id}`);
+      await cargarPostulaciones();
 
     } catch (error) {
-      console.error("Error al eliminar:", error);
+      console.error(
+        "Error al eliminar:",
+        error
+      );
     }
   };
 
-  const postulacionesFiltradas = postulaciones.filter((postulacion) => {
-    const coincideBusqueda =
-      postulacion.empresa
-        ?.toLowerCase()
-        .includes(busqueda.toLowerCase()) ||
-      postulacion.cargo
-        ?.toLowerCase()
-        .includes(busqueda.toLowerCase());
+  const postulacionesFiltradas = postulaciones.filter(
+    (postulacion) => {
+      const textoBusqueda = busqueda
+        .trim()
+        .toLowerCase();
 
-    const coincideEstado =
-      estado === "" ||
-      postulacion.estado === estado;
+      const coincideBusqueda =
+        textoBusqueda === "" ||
+        postulacion.empresa
+          ?.toLowerCase()
+          .includes(textoBusqueda) ||
+        postulacion.cargo
+          ?.toLowerCase()
+          .includes(textoBusqueda);
 
-    return coincideBusqueda && coincideEstado;
+      const coincideEstado =
+        estado === "" ||
+        postulacion.estado === estado;
+
+      const coincideModalidad =
+        modalidadFiltro === "" ||
+        postulacion.modalidad === modalidadFiltro;
+
+      const coincidePrioridad =
+        prioridadFiltro === "" ||
+        postulacion.prioridad === prioridadFiltro;
+
+      const coincideNivel =
+        nivelFiltro === "" ||
+        postulacion.nivel === nivelFiltro;
+
+      return (
+        coincideBusqueda &&
+        coincideEstado &&
+        coincideModalidad &&
+        coincidePrioridad &&
+        coincideNivel
+      );
+    }
+  );
+
+  const postulacionesOrdenadas = [
+    ...postulacionesFiltradas
+  ].sort((a, b) => {
+    switch (orden) {
+      case "antiguas":
+        return (
+          new Date(a.fechaPostulacion || a.createdAt) -
+          new Date(b.fechaPostulacion || b.createdAt)
+        );
+
+      case "empresaAZ":
+        return (a.empresa || "").localeCompare(
+          b.empresa || "",
+          "es",
+          { sensitivity: "base" }
+        );
+
+      case "empresaZA":
+        return (b.empresa || "").localeCompare(
+          a.empresa || "",
+          "es",
+          { sensitivity: "base" }
+        );
+
+      case "salarioMayor":
+        return (
+          Number(b.salario || 0) -
+          Number(a.salario || 0)
+        );
+
+      case "salarioMenor":
+        return (
+          Number(a.salario || 0) -
+          Number(b.salario || 0)
+        );
+
+      case "prioridad": {
+        const prioridades = {
+          Alta: 1,
+          Media: 2,
+          Baja: 3
+        };
+
+        return (
+          (prioridades[a.prioridad] || 4) -
+          (prioridades[b.prioridad] || 4)
+        );
+      }
+
+      case "recientes":
+      default:
+        return (
+          new Date(b.fechaPostulacion || b.createdAt) -
+          new Date(a.fechaPostulacion || a.createdAt)
+        );
+    }
   });
 
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(
+      postulacionesOrdenadas.length /
+      postulacionesPorPagina
+    )
+  );
+
+  const paginaSegura = Math.min(
+    paginaActual,
+    totalPaginas
+  );
+
+  const indiceInicial =
+    (paginaSegura - 1) *
+    postulacionesPorPagina;
+
+  const indiceFinal =
+    indiceInicial +
+    postulacionesPorPagina;
+
+  const postulacionesPaginadas =
+    postulacionesOrdenadas.slice(
+      indiceInicial,
+      indiceFinal
+    );
+
+  const hayFiltrosActivos =
+    busqueda !== "" ||
+    estado !== "" ||
+    modalidadFiltro !== "" ||
+    prioridadFiltro !== "" ||
+    nivelFiltro !== "" ||
+    orden !== "recientes";
+
+  const irPaginaAnterior = () => {
+    setPaginaActual((pagina) =>
+      Math.max(1, pagina - 1)
+    );
+  };
+
+  const irPaginaSiguiente = () => {
+    setPaginaActual((pagina) =>
+      Math.min(totalPaginas, pagina + 1)
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 p-6 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white md:p-8">
+    <div className="min-h-screen bg-slate-100 p-4 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white sm:p-6 md:p-8">
 
       <div className="mx-auto max-w-7xl">
 
@@ -219,7 +432,7 @@ function Postulaciones() {
 
           <button
             onClick={abrirNuevaPostulacion}
-            className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 md:w-auto"
           >
             <Plus size={20} />
             Nueva postulación
@@ -227,71 +440,352 @@ function Postulaciones() {
 
         </header>
 
-        <section className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-sm transition-colors dark:bg-slate-800 md:flex-row">
+        <section className="mb-6 rounded-2xl bg-white p-4 shadow-sm transition-colors dark:bg-slate-800 sm:p-5">
 
-          <div className="flex flex-1 items-center rounded-xl border border-slate-300 px-4 dark:border-slate-600">
+          <div className="flex items-center rounded-xl border border-slate-300 px-4 dark:border-slate-600">
 
             <Search
               size={19}
-              className="text-slate-400"
+              className="shrink-0 text-slate-400"
             />
 
             <input
               type="text"
-              placeholder="Buscar empresa o cargo..."
+              placeholder="Buscar por empresa o cargo..."
               value={busqueda}
               onChange={(e) =>
                 setBusqueda(e.target.value)
               }
-              className="w-full border-0 bg-transparent px-3 py-3 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+              className="min-w-0 w-full border-0 bg-transparent px-3 py-3 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
             />
 
           </div>
 
-          <select
-            value={estado}
-            onChange={(e) =>
-              setEstado(e.target.value)
-            }
-            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-          >
-            <option value="">
-              Todos los estados
-            </option>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 
-            <option value="Enviado">
-              Enviado
-            </option>
+            <select
+              value={estado}
+              onChange={(e) =>
+                setEstado(e.target.value)
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">Todos los estados</option>
+              <option value="Enviado">Enviado</option>
+              <option value="En revisión">En revisión</option>
+              <option value="Prueba Técnica">Prueba Técnica</option>
+              <option value="Entrevista">Entrevista</option>
+              <option value="Oferta">Oferta</option>
+              <option value="Contratado">Contratado</option>
+              <option value="Rechazado">Rechazado</option>
+            </select>
 
-            <option value="En revisión">
-              En revisión
-            </option>
+            <select
+              value={modalidadFiltro}
+              onChange={(e) =>
+                setModalidadFiltro(e.target.value)
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">
+                Todas las modalidades
+              </option>
+              <option value="Remoto">Remoto</option>
+              <option value="Híbrido">Híbrido</option>
+              <option value="Presencial">Presencial</option>
+            </select>
 
-            <option value="Prueba Técnica">
-              Prueba Técnica
-            </option>
+            <select
+              value={prioridadFiltro}
+              onChange={(e) =>
+                setPrioridadFiltro(e.target.value)
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">
+                Todas las prioridades
+              </option>
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
 
-            <option value="Entrevista">
-              Entrevista
-            </option>
+            <select
+              value={nivelFiltro}
+              onChange={(e) =>
+                setNivelFiltro(e.target.value)
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">
+                Todos los niveles
+              </option>
+              <option value="Practicante">Practicante</option>
+              <option value="Junior">Junior</option>
+              <option value="Semi Senior">Semi Senior</option>
+              <option value="Senior">Senior</option>
+            </select>
 
-            <option value="Oferta">
-              Oferta
-            </option>
+          </div>
 
-            <option value="Contratado">
-              Contratado
-            </option>
+          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-            <option value="Rechazado">
-              Rechazado
-            </option>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
 
-          </select>
+              <div className="flex items-center gap-2">
+
+                <ArrowUpDown
+                  size={18}
+                  className="shrink-0 text-slate-400"
+                />
+
+                <select
+                  value={orden}
+                  onChange={(e) =>
+                    setOrden(e.target.value)
+                  }
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white sm:w-auto"
+                >
+                  <option value="recientes">
+                    Más recientes
+                  </option>
+                  <option value="antiguas">
+                    Más antiguas
+                  </option>
+                  <option value="empresaAZ">
+                    Empresa A - Z
+                  </option>
+                  <option value="empresaZA">
+                    Empresa Z - A
+                  </option>
+                  <option value="salarioMayor">
+                    Mayor salario
+                  </option>
+                  <option value="salarioMenor">
+                    Menor salario
+                  </option>
+                  <option value="prioridad">
+                    Prioridad alta primero
+                  </option>
+                </select>
+
+              </div>
+
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+
+                Mostrando{" "}
+
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {postulacionesOrdenadas.length === 0
+                    ? 0
+                    : indiceInicial + 1}
+                </span>
+
+                {" - "}
+
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {Math.min(
+                    indiceFinal,
+                    postulacionesOrdenadas.length
+                  )}
+                </span>
+
+                {" de "}
+
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {postulacionesOrdenadas.length}
+                </span>
+
+                {" resultados"}
+
+              </p>
+
+            </div>
+
+            {hayFiltrosActivos && (
+
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                <RotateCcw size={16} />
+                Limpiar filtros
+              </button>
+
+            )}
+
+          </div>
 
         </section>
 
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm transition-colors dark:bg-slate-800">
+        {/* VISTA MÓVIL */}
+        <section className="space-y-4 lg:hidden">
+
+          {postulacionesPaginadas.length > 0 ? (
+
+            postulacionesPaginadas.map((postulacion) => (
+
+              <div
+                key={postulacion._id}
+                className="rounded-2xl bg-white p-5 shadow-sm transition-colors dark:bg-slate-800"
+              >
+
+                <div className="flex items-start justify-between gap-4">
+
+                  <div className="flex min-w-0 items-start gap-3">
+
+                    <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
+                      <BriefcaseBusiness size={20} />
+                    </div>
+
+                    <div className="min-w-0">
+
+                      <h2 className="truncate font-bold text-slate-900 dark:text-white">
+                        {postulacion.empresa}
+                      </h2>
+
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        {postulacion.cargo}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                    {postulacion.estado}
+                  </span>
+
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+
+                  <DatoMovil
+                    icono={<MapPin size={16} />}
+                    titulo="Modalidad"
+                    valor={
+                      postulacion.modalidad ||
+                      "No especificada"
+                    }
+                  />
+
+                  <DatoMovil
+                    icono={<Layers3 size={16} />}
+                    titulo="Nivel"
+                    valor={
+                      postulacion.nivel ||
+                      "No especificado"
+                    }
+                  />
+
+                  <DatoMovil
+                    icono={<Flag size={16} />}
+                    titulo="Prioridad"
+                    valor={
+                      postulacion.prioridad ||
+                      "Media"
+                    }
+                  />
+
+                  <DatoMovil
+                    icono={<CalendarDays size={16} />}
+                    titulo="Entrevista"
+                    valor={
+                      postulacion.fechaEntrevista
+                        ? new Date(
+                            postulacion.fechaEntrevista
+                          ).toLocaleDateString(
+                            "es-EC",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric"
+                            }
+                          )
+                        : "Sin fecha"
+                    }
+                  />
+
+                </div>
+
+                {postulacion.fechaEntrevista && (
+
+                  <div className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+
+                    Entrevista:{" "}
+
+                    <span className="font-semibold">
+                      {new Date(
+                        postulacion.fechaEntrevista
+                      ).toLocaleString(
+                        "es-EC",
+                        {
+                          dateStyle: "medium",
+                          timeStyle: "short"
+                        }
+                      )}
+                    </span>
+
+                  </div>
+
+                )}
+
+                <div className="mt-5 flex gap-3 border-t border-slate-100 pt-4 dark:border-slate-700">
+
+                  <button
+                    onClick={() =>
+                      abrirEdicion(postulacion)
+                    }
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-slate-700"
+                  >
+                    <Pencil size={17} />
+                    Editar
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      eliminarPostulacion(
+                        postulacion._id
+                      )
+                    }
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                  >
+                    <Trash2 size={17} />
+                    Eliminar
+                  </button>
+
+                </div>
+
+              </div>
+
+            ))
+
+          ) : (
+
+            <div className="rounded-2xl bg-white px-6 py-14 text-center shadow-sm dark:bg-slate-800">
+
+              <Search
+                size={38}
+                className="mx-auto text-slate-300 dark:text-slate-600"
+              />
+
+              <p className="mt-3 font-semibold text-slate-700 dark:text-slate-300">
+                No encontramos postulaciones
+              </p>
+
+              <p className="mt-1 text-sm text-slate-400">
+                Prueba cambiando o limpiando los filtros.
+              </p>
+
+            </div>
+
+          )}
+
+        </section>
+
+        {/* VISTA ESCRITORIO */}
+        <section className="hidden overflow-hidden rounded-2xl bg-white shadow-sm transition-colors dark:bg-slate-800 lg:block">
 
           <div className="overflow-x-auto">
 
@@ -311,6 +805,10 @@ function Postulaciones() {
 
                   <th className="px-6 py-4">
                     Modalidad
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Nivel
                   </th>
 
                   <th className="px-6 py-4">
@@ -335,9 +833,9 @@ function Postulaciones() {
 
               <tbody>
 
-                {postulacionesFiltradas.length > 0 ? (
+                {postulacionesPaginadas.length > 0 ? (
 
-                  postulacionesFiltradas.map(
+                  postulacionesPaginadas.map(
                     (postulacion) => (
 
                       <tr
@@ -350,11 +848,7 @@ function Postulaciones() {
                           <div className="flex items-center gap-3">
 
                             <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
-
-                              <BriefcaseBusiness
-                                size={20}
-                              />
-
+                              <BriefcaseBusiness size={20} />
                             </div>
 
                             <span className="font-semibold text-slate-900 dark:text-white">
@@ -372,6 +866,11 @@ function Postulaciones() {
                         <td className="px-6 py-5 text-slate-600 dark:text-slate-300">
                           {postulacion.modalidad ||
                             "No especificada"}
+                        </td>
+
+                        <td className="px-6 py-5 text-slate-600 dark:text-slate-300">
+                          {postulacion.nivel ||
+                            "No especificado"}
                         </td>
 
                         <td className="px-6 py-5">
@@ -392,9 +891,7 @@ function Postulaciones() {
                           {postulacion.fechaEntrevista
                             ? new Date(
                                 postulacion.fechaEntrevista
-                              ).toLocaleString(
-                                "es-EC"
-                              )
+                              ).toLocaleString("es-EC")
                             : "Sin fecha"}
 
                         </td>
@@ -405,9 +902,7 @@ function Postulaciones() {
 
                             <button
                               onClick={() =>
-                                abrirEdicion(
-                                  postulacion
-                                )
+                                abrirEdicion(postulacion)
                               }
                               className="rounded-lg p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-blue-400"
                               title="Editar"
@@ -441,10 +936,23 @@ function Postulaciones() {
                   <tr>
 
                     <td
-                      colSpan="7"
-                      className="px-6 py-16 text-center text-slate-400 dark:text-slate-500"
+                      colSpan="8"
+                      className="px-6 py-16 text-center"
                     >
-                      No hay postulaciones para mostrar.
+
+                      <Search
+                        size={38}
+                        className="mx-auto text-slate-300 dark:text-slate-600"
+                      />
+
+                      <p className="mt-3 font-semibold text-slate-700 dark:text-slate-300">
+                        No encontramos postulaciones
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-400">
+                        Prueba cambiando o limpiando los filtros.
+                      </p>
+
                     </td>
 
                   </tr>
@@ -459,15 +967,61 @@ function Postulaciones() {
 
         </section>
 
+        {postulacionesOrdenadas.length > 0 && (
+
+          <div className="mt-4 flex flex-col items-center justify-between gap-4 rounded-2xl bg-white px-4 py-4 shadow-sm dark:bg-slate-800 sm:flex-row sm:px-6">
+
+            <button
+              type="button"
+              onClick={irPaginaAnterior}
+              disabled={paginaSegura === 1}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
+            >
+              <ChevronLeft size={17} />
+              Anterior
+            </button>
+
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+
+              Página{" "}
+
+              <span className="font-semibold text-slate-800 dark:text-white">
+                {paginaSegura}
+              </span>
+
+              {" de "}
+
+              <span className="font-semibold text-slate-800 dark:text-white">
+                {totalPaginas}
+              </span>
+
+            </p>
+
+            <button
+              type="button"
+              onClick={irPaginaSiguiente}
+              disabled={
+                paginaSegura === totalPaginas
+              }
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
+            >
+              Siguiente
+              <ChevronRight size={17} />
+            </button>
+
+          </div>
+
+        )}
+
       </div>
 
       {mostrarFormulario && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4">
 
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-7 text-slate-900 shadow-2xl transition-colors dark:bg-slate-800 dark:text-white">
+          <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-5 text-slate-900 shadow-2xl dark:bg-slate-800 dark:text-white sm:rounded-3xl sm:p-7">
 
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex items-start justify-between gap-4">
 
               <div>
 
@@ -477,7 +1031,7 @@ function Postulaciones() {
                     : "Nueva postulación"}
                 </p>
 
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
                   {modoEdicion
                     ? "Actualizar proceso laboral"
                     : "Registrar proceso laboral"}
@@ -487,7 +1041,7 @@ function Postulaciones() {
 
               <button
                 onClick={cerrarFormulario}
-                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="shrink-0 rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 <X size={22} />
               </button>
@@ -530,6 +1084,19 @@ function Postulaciones() {
               />
 
               <SelectCampo
+                label="Nivel"
+                name="nivel"
+                value={formulario.nivel}
+                onChange={manejarCambio}
+                opciones={[
+                  "Practicante",
+                  "Junior",
+                  "Semi Senior",
+                  "Senior"
+                ]}
+              />
+
+              <SelectCampo
                 label="Estado"
                 name="estado"
                 value={formulario.estado}
@@ -566,6 +1133,21 @@ function Postulaciones() {
                 placeholder="Ej. 1200"
               />
 
+              <SelectCampo
+                label="Moneda"
+                name="moneda"
+                value={formulario.moneda}
+                onChange={manejarCambio}
+                opciones={[
+                  "USD",
+                  "EUR",
+                  "COP",
+                  "PEN",
+                  "MXN",
+                  "Otra"
+                ]}
+              />
+
               <Campo
                 label="Ciudad"
                 name="ciudad"
@@ -582,21 +1164,74 @@ function Postulaciones() {
                 placeholder="Ecuador"
               />
 
-              <div className="md:col-span-2 mt-2 border-t border-slate-200 pt-6 dark:border-slate-700">
+              <div className="md:col-span-2">
 
-                <div className="mb-5">
+                <Campo
+                  label="Tecnologías"
+                  name="tecnologias"
+                  value={formulario.tecnologias}
+                  onChange={manejarCambio}
+                  placeholder="Ej. React, Node.js, MongoDB, Docker"
+                />
 
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                    Información de entrevista
-                  </p>
-
-                  <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                    Datos de la entrevista
-                  </h3>
-
-                </div>
+                <p className="mt-2 text-xs text-slate-400">
+                  Separa las tecnologías con comas.
+                </p>
 
               </div>
+
+              <div className="md:col-span-2">
+
+                <CampoIcono
+                  label="URL de la oferta"
+                  name="urlOferta"
+                  type="url"
+                  value={formulario.urlOferta}
+                  onChange={manejarCambio}
+                  placeholder="https://empresa.com/oferta..."
+                  icono={<LinkIcon size={18} />}
+                />
+
+              </div>
+
+              <SeccionTitulo
+                etiqueta="Empresa"
+                titulo="Contacto de Recursos Humanos"
+              />
+
+              <CampoIcono
+                label="Contacto RR.HH."
+                name="contactoRRHH"
+                value={formulario.contactoRRHH}
+                onChange={manejarCambio}
+                placeholder="Ej. Ana Pérez"
+                icono={<UserRound size={18} />}
+              />
+
+              <CampoIcono
+                label="Correo RR.HH."
+                name="correoRRHH"
+                type="email"
+                value={formulario.correoRRHH}
+                onChange={manejarCambio}
+                placeholder="ana@empresa.com"
+                icono={<Mail size={18} />}
+              />
+
+              <CampoIcono
+                label="Teléfono RR.HH."
+                name="telefonoRRHH"
+                type="tel"
+                value={formulario.telefonoRRHH}
+                onChange={manejarCambio}
+                placeholder="Ej. 0999999999"
+                icono={<Phone size={18} />}
+              />
+
+              <SeccionTitulo
+                etiqueta="Información de entrevista"
+                titulo="Datos de la entrevista"
+              />
 
               <Campo
                 label="Fecha de entrevista"
@@ -660,7 +1295,7 @@ function Postulaciones() {
                     value={formulario.notasEntrevista}
                     onChange={manejarCambio}
                     rows="4"
-                    placeholder="Ej. Repasar Node.js, Express, MongoDB y preparar preguntas para el entrevistador..."
+                    placeholder="Ej. Repasar Node.js, Express y MongoDB..."
                     className="w-full resize-none rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                   />
 
@@ -685,7 +1320,7 @@ function Postulaciones() {
 
               </div>
 
-              <div className="flex justify-end gap-3 md:col-span-2">
+              <div className="flex flex-col-reverse gap-3 md:col-span-2 sm:flex-row sm:justify-end">
 
                 <button
                   type="button"
@@ -713,6 +1348,49 @@ function Postulaciones() {
         </div>
 
       )}
+
+    </div>
+  );
+}
+
+function DatoMovil({
+  icono,
+  titulo,
+  valor
+}) {
+  return (
+    <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-700">
+
+      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+        {icono}
+
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          {titulo}
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
+        {valor}
+      </p>
+
+    </div>
+  );
+}
+
+function SeccionTitulo({
+  etiqueta,
+  titulo
+}) {
+  return (
+    <div className="mt-2 border-t border-slate-200 pt-6 dark:border-slate-700 md:col-span-2">
+
+      <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+        {etiqueta}
+      </p>
+
+      <h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
+        {titulo}
+      </h3>
 
     </div>
   );
@@ -766,7 +1444,7 @@ function CampoIcono({
 
       <div className="flex items-center rounded-xl border border-slate-300 bg-white px-4 focus-within:border-blue-600 dark:border-slate-600 dark:bg-slate-700">
 
-        <span className="text-slate-400">
+        <span className="shrink-0 text-slate-400">
           {icono}
         </span>
 
@@ -776,7 +1454,7 @@ function CampoIcono({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="w-full border-0 bg-transparent px-3 py-3 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+          className="min-w-0 w-full border-0 bg-transparent px-3 py-3 text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
         />
 
       </div>

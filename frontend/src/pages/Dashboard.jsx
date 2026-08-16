@@ -32,11 +32,14 @@ import {
   Plus,
   Video,
   ExternalLink,
-  Clock3
+  Clock3,
+  Menu,
+  X
 } from "lucide-react";
 
 function Dashboard() {
   const [vista, setVista] = useState("dashboard");
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
 
   const [stats, setStats] = useState({
     total: 0,
@@ -130,6 +133,11 @@ function Dashboard() {
 
   }, [vista]);
 
+  const cambiarVista = (nuevaVista) => {
+    setVista(nuevaVista);
+    setMenuMovilAbierto(false);
+  };
+
   const cerrarSesion = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
@@ -138,73 +146,17 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-100 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white">
+    <div className="min-h-screen bg-slate-100 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white">
 
-      <aside className="hidden w-64 flex-col bg-slate-950 text-white lg:flex">
+      {/* SIDEBAR ESCRITORIO */}
+      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-slate-950 text-white lg:flex">
 
-        <div className="flex items-center gap-3 border-b border-slate-800 p-6">
+        <Logo />
 
-          <div className="rounded-xl bg-blue-600 p-2.5">
-            <BriefcaseBusiness size={24} />
-          </div>
-
-          <div>
-            <h1 className="font-bold">
-              JobTrack Pro
-            </h1>
-
-            <p className="text-xs text-slate-400">
-              Career Manager
-            </p>
-          </div>
-
-        </div>
-
-        <nav className="flex-1 space-y-2 p-4">
-
-          <MenuItem
-            icono={<LayoutDashboard size={20} />}
-            texto="Dashboard"
-            activo={vista === "dashboard"}
-            onClick={() => setVista("dashboard")}
-          />
-
-          <MenuItem
-            icono={<FileText size={20} />}
-            texto="Postulaciones"
-            activo={vista === "postulaciones"}
-            onClick={() => setVista("postulaciones")}
-          />
-
-          <MenuItem
-            icono={<CalendarDays size={20} />}
-            texto="Calendario"
-            activo={vista === "calendario"}
-            onClick={() => setVista("calendario")}
-          />
-
-          <MenuItem
-            icono={<Building2 size={20} />}
-            texto="Empresas"
-            activo={vista === "empresas"}
-            onClick={() => setVista("empresas")}
-          />
-
-          <MenuItem
-            icono={<User size={20} />}
-            texto="Perfil"
-            activo={vista === "perfil"}
-            onClick={() => setVista("perfil")}
-          />
-
-          <MenuItem
-            icono={<Settings size={20} />}
-            texto="Configuración"
-            activo={vista === "configuracion"}
-            onClick={() => setVista("configuracion")}
-          />
-
-        </nav>
+        <Navegacion
+          vista={vista}
+          cambiarVista={cambiarVista}
+        />
 
         <div className="border-t border-slate-800 p-4">
 
@@ -220,7 +172,98 @@ function Dashboard() {
 
       </aside>
 
-      <main className="flex-1">
+      {/* HEADER MÓVIL */}
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800 lg:hidden">
+
+        <div className="flex items-center gap-3">
+
+          <div className="rounded-xl bg-blue-600 p-2 text-white">
+            <BriefcaseBusiness size={21} />
+          </div>
+
+          <div>
+            <h1 className="font-bold text-slate-900 dark:text-white">
+              JobTrack Pro
+            </h1>
+
+            <p className="text-xs text-slate-400">
+              Career Manager
+            </p>
+          </div>
+
+        </div>
+
+        <button
+          onClick={() =>
+            setMenuMovilAbierto(true)
+          }
+          className="rounded-xl p-2.5 text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+          aria-label="Abrir menú"
+        >
+          <Menu size={24} />
+        </button>
+
+      </header>
+
+      {/* FONDO MENÚ MÓVIL */}
+      {menuMovilAbierto && (
+
+        <div
+          className="fixed inset-0 z-50 bg-black/60 lg:hidden"
+          onClick={() =>
+            setMenuMovilAbierto(false)
+          }
+        >
+
+          {/* PANEL MÓVIL */}
+          <aside
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+            className="flex h-full w-[85%] max-w-xs flex-col bg-slate-950 text-white shadow-2xl"
+          >
+
+            <div className="flex items-center justify-between border-b border-slate-800">
+
+              <Logo />
+
+              <button
+                onClick={() =>
+                  setMenuMovilAbierto(false)
+                }
+                className="mr-4 rounded-xl p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+                aria-label="Cerrar menú"
+              >
+                <X size={22} />
+              </button>
+
+            </div>
+
+            <Navegacion
+              vista={vista}
+              cambiarVista={cambiarVista}
+            />
+
+            <div className="border-t border-slate-800 p-4">
+
+              <button
+                onClick={cerrarSesion}
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                <LogOut size={20} />
+                Cerrar sesión
+              </button>
+
+            </div>
+
+          </aside>
+
+        </div>
+
+      )}
+
+      {/* CONTENIDO */}
+      <main className="min-h-screen lg:ml-64">
 
         {vista === "postulaciones" ? (
           <Postulaciones />
@@ -238,7 +281,7 @@ function Dashboard() {
           <Configuracion />
 
         ) : (
-          <div className="p-6 transition-colors dark:bg-slate-900 md:p-8">
+          <div className="p-4 transition-colors dark:bg-slate-900 sm:p-6 md:p-8">
 
             <div className="mx-auto max-w-7xl">
 
@@ -250,7 +293,7 @@ function Dashboard() {
                     Dashboard
                   </p>
 
-                  <h2 className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
                     Hola, {usuario?.nombre || "Usuario"} 👋
                   </h2>
 
@@ -261,8 +304,10 @@ function Dashboard() {
                 </div>
 
                 <button
-                  onClick={() => setVista("postulaciones")}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                  onClick={() =>
+                    cambiarVista("postulaciones")
+                  }
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 md:w-auto"
                 >
                   <Plus size={20} />
                   Nueva postulación
@@ -306,7 +351,7 @@ function Dashboard() {
 
               <section className="mt-8 grid gap-6 lg:grid-cols-3">
 
-                <div className="rounded-2xl bg-white p-6 shadow-sm transition-colors dark:bg-slate-800 lg:col-span-2">
+                <div className="rounded-2xl bg-white p-4 shadow-sm transition-colors dark:bg-slate-800 sm:p-6 lg:col-span-2">
 
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                     Actividad de postulaciones
@@ -316,7 +361,7 @@ function Dashboard() {
                     Distribución de tus procesos laborales por estado.
                   </p>
 
-                  <div className="mt-6 h-72 w-full">
+                  <div className="mt-6 h-64 w-full sm:h-72">
 
                     <ResponsiveContainer width="100%" height="100%">
 
@@ -331,6 +376,7 @@ function Dashboard() {
                           dataKey="nombre"
                           tickLine={false}
                           axisLine={false}
+                          fontSize={12}
                         />
 
                         <YAxis
@@ -355,7 +401,7 @@ function Dashboard() {
 
                 </div>
 
-                <div className="rounded-2xl bg-white p-6 shadow-sm transition-colors dark:bg-slate-800">
+                <div className="rounded-2xl bg-white p-4 shadow-sm transition-colors dark:bg-slate-800 sm:p-6">
 
                   <div className="flex items-center justify-between gap-3">
 
@@ -372,7 +418,9 @@ function Dashboard() {
                     </div>
 
                     <button
-                      onClick={() => setVista("calendario")}
+                      onClick={() =>
+                        cambiarVista("calendario")
+                      }
                       className="shrink-0 text-sm font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       Ver todas
@@ -386,9 +434,10 @@ function Dashboard() {
 
                       proximasEntrevistas.map((entrevista) => {
 
-                        const alerta = obtenerAlertaEntrevista(
-                          entrevista.fechaEntrevista
-                        );
+                        const alerta =
+                          obtenerAlertaEntrevista(
+                            entrevista.fechaEntrevista
+                          );
 
                         return (
                           <div
@@ -398,9 +447,9 @@ function Dashboard() {
 
                             <div className="flex items-start justify-between gap-3">
 
-                              <div>
+                              <div className="min-w-0">
 
-                                <p className="font-semibold text-slate-900 dark:text-white">
+                                <p className="truncate font-semibold text-slate-900 dark:text-white">
                                   {entrevista.empresa}
                                 </p>
 
@@ -410,7 +459,7 @@ function Dashboard() {
 
                               </div>
 
-                              <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-slate-600 dark:text-blue-400">
+                              <div className="shrink-0 rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-slate-600 dark:text-blue-400">
                                 <CalendarDays size={18} />
                               </div>
 
@@ -524,6 +573,95 @@ function Dashboard() {
   );
 }
 
+function Logo() {
+  return (
+    <div className="flex items-center gap-3 p-6">
+
+      <div className="rounded-xl bg-blue-600 p-2.5">
+        <BriefcaseBusiness size={24} />
+      </div>
+
+      <div>
+
+        <h1 className="font-bold">
+          JobTrack Pro
+        </h1>
+
+        <p className="text-xs text-slate-400">
+          Career Manager
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+function Navegacion({
+  vista,
+  cambiarVista
+}) {
+  return (
+    <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+
+      <MenuItem
+        icono={<LayoutDashboard size={20} />}
+        texto="Dashboard"
+        activo={vista === "dashboard"}
+        onClick={() =>
+          cambiarVista("dashboard")
+        }
+      />
+
+      <MenuItem
+        icono={<FileText size={20} />}
+        texto="Postulaciones"
+        activo={vista === "postulaciones"}
+        onClick={() =>
+          cambiarVista("postulaciones")
+        }
+      />
+
+      <MenuItem
+        icono={<CalendarDays size={20} />}
+        texto="Calendario"
+        activo={vista === "calendario"}
+        onClick={() =>
+          cambiarVista("calendario")
+        }
+      />
+
+      <MenuItem
+        icono={<Building2 size={20} />}
+        texto="Empresas"
+        activo={vista === "empresas"}
+        onClick={() =>
+          cambiarVista("empresas")
+        }
+      />
+
+      <MenuItem
+        icono={<User size={20} />}
+        texto="Perfil"
+        activo={vista === "perfil"}
+        onClick={() =>
+          cambiarVista("perfil")
+        }
+      />
+
+      <MenuItem
+        icono={<Settings size={20} />}
+        texto="Configuración"
+        activo={vista === "configuracion"}
+        onClick={() =>
+          cambiarVista("configuracion")
+        }
+      />
+
+    </nav>
+  );
+}
+
 function obtenerAlertaEntrevista(fechaEntrevista) {
   const ahora = new Date();
   const entrevista = new Date(fechaEntrevista);
@@ -576,11 +714,11 @@ function Card({
   icono
 }) {
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:bg-slate-800">
+    <div className="rounded-2xl bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:bg-slate-800 sm:p-6">
 
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5">
 
-        <div className="rounded-xl bg-blue-50 p-3 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
+        <div className="w-fit rounded-xl bg-blue-50 p-3 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
           {icono}
         </div>
 

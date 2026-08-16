@@ -24,7 +24,10 @@ function Calendario() {
       const respuesta = await api.get("/applications");
 
       const entrevistasConFecha = respuesta.data
-        .filter((postulacion) => postulacion.fechaEntrevista)
+        .filter(
+          (postulacion) =>
+            postulacion.fechaEntrevista
+        )
         .sort(
           (a, b) =>
             new Date(a.fechaEntrevista) -
@@ -60,21 +63,21 @@ function Calendario() {
     );
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white md:p-8">
+    <div className="min-h-screen bg-slate-100 p-4 text-slate-900 transition-colors dark:bg-slate-900 dark:text-white sm:p-6 md:p-8">
 
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto w-full max-w-7xl">
 
-        <header className="mb-8">
+        <header className="mb-6 sm:mb-8">
 
           <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
             Agenda
           </p>
 
-          <h1 className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
             Calendario de entrevistas
           </h1>
 
-          <p className="mt-2 text-slate-500 dark:text-slate-400">
+          <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400 sm:text-base">
             Consulta tus entrevistas próximas y revisa las anteriores.
           </p>
 
@@ -88,7 +91,7 @@ function Calendario() {
           esPasada={false}
         />
 
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
 
           <SeccionEntrevistas
             titulo="Entrevistas anteriores"
@@ -114,30 +117,25 @@ function SeccionEntrevistas({
   esPasada
 }) {
   return (
-    <section className="rounded-3xl bg-white/50 p-5 shadow-sm transition-colors dark:bg-slate-800/50">
+    <section className="rounded-2xl bg-white/50 p-4 shadow-sm transition-colors dark:bg-slate-800/50 sm:rounded-3xl sm:p-5">
 
-      <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="mb-5">
 
-        <div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white sm:text-xl">
+          {titulo}
+        </h2>
 
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {titulo}
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {descripcion}
-          </p>
-
-        </div>
-
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {descripcion}
+        </p>
 
       </div>
 
       {entrevistas.length > 0 ? (
 
-        <div className="max-h-[620px] overflow-y-auto pr-2">
+        <div className="max-h-[650px] overflow-y-auto pr-0 sm:pr-2">
 
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
 
             {entrevistas.map((entrevista) => (
 
@@ -155,14 +153,14 @@ function SeccionEntrevistas({
 
       ) : (
 
-        <div className="rounded-2xl bg-white p-10 text-center shadow-sm transition-colors dark:bg-slate-800">
+        <div className="rounded-2xl bg-white p-8 text-center shadow-sm transition-colors dark:bg-slate-800 sm:p-10">
 
           <CalendarDays
             size={42}
             className="mx-auto text-slate-300 dark:text-slate-600"
           />
 
-          <p className="mt-4 text-slate-500 dark:text-slate-400">
+          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400 sm:text-base">
             {vacio}
           </p>
 
@@ -191,19 +189,19 @@ function TarjetaEntrevista({
 
   return (
     <div
-      className={`rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:bg-slate-800 ${
+      className={`min-w-0 rounded-2xl bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:bg-slate-800 sm:p-5 lg:p-6 ${
         esPasada ? "opacity-80" : ""
       }`}
     >
 
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between gap-3">
 
-        <div className="rounded-xl bg-blue-50 p-3 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
-          <CalendarDays size={24} />
+        <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-slate-700 dark:text-blue-400 sm:p-3">
+          <CalendarDays size={22} />
         </div>
 
         <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+          className={`max-w-[55%] truncate rounded-full px-3 py-1 text-xs font-semibold ${
             esPasada
               ? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
               : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
@@ -216,20 +214,20 @@ function TarjetaEntrevista({
 
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-start gap-3">
 
         <BriefcaseBusiness
           size={20}
-          className="text-slate-400 dark:text-slate-500"
+          className="mt-0.5 shrink-0 text-slate-400 dark:text-slate-500"
         />
 
-        <div>
+        <div className="min-w-0">
 
-          <h3 className="font-bold text-slate-900 dark:text-white">
+          <h3 className="break-words font-bold text-slate-900 dark:text-white">
             {entrevista.empresa}
           </h3>
 
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 break-words text-sm text-slate-500 dark:text-slate-400">
             {entrevista.cargo}
           </p>
 
@@ -237,7 +235,7 @@ function TarjetaEntrevista({
 
       </div>
 
-      <div className="mt-6 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-700">
+      <div className="mt-5 space-y-3 border-t border-slate-100 pt-5 dark:border-slate-700 sm:mt-6">
 
         <Dato
           icono={<CalendarDays size={18} />}
@@ -304,7 +302,7 @@ function TarjetaEntrevista({
 
       {entrevista.notasEntrevista && (
 
-        <div className="mt-5 rounded-xl bg-slate-50 p-4 dark:bg-slate-700">
+        <div className="mt-5 rounded-xl bg-slate-50 p-3 dark:bg-slate-700 sm:p-4">
 
           <div className="flex items-start gap-3">
 
@@ -313,13 +311,13 @@ function TarjetaEntrevista({
               className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400"
             />
 
-            <div>
+            <div className="min-w-0">
 
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Notas
               </p>
 
-              <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <p className="mt-1 break-words text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                 {entrevista.notasEntrevista}
               </p>
 
@@ -339,7 +337,7 @@ function TarjetaEntrevista({
             href={entrevista.enlaceEntrevista}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:text-base"
           >
             <ExternalLink size={18} />
             Abrir reunión
@@ -364,13 +362,13 @@ function Dato({
   children
 }) {
   return (
-    <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+    <div className="flex min-w-0 items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
 
-      <span className="shrink-0 text-blue-600 dark:text-blue-400">
+      <span className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400">
         {icono}
       </span>
 
-      <span>
+      <span className="min-w-0 break-words">
         {children}
       </span>
 
