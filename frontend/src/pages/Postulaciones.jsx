@@ -20,7 +20,11 @@ import {
   CalendarDays,
   MapPin,
   Layers3,
-  Flag
+  Flag,
+  Download,
+  Eye,
+  ExternalLink,
+  DollarSign
 } from "lucide-react";
 
 function Postulaciones() {
@@ -31,17 +35,26 @@ function Postulaciones() {
   const [modalidadFiltro, setModalidadFiltro] = useState("");
   const [prioridadFiltro, setPrioridadFiltro] = useState("");
   const [nivelFiltro, setNivelFiltro] = useState("");
-
   const [orden, setOrden] = useState("recientes");
 
   const [paginaActual, setPaginaActual] = useState(1);
-
   const postulacionesPorPagina = 10;
 
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarFormulario, setMostrarFormulario] =
+    useState(false);
 
-  const [modoEdicion, setModoEdicion] = useState(false);
-  const [postulacionEditando, setPostulacionEditando] = useState(null);
+  const [modoEdicion, setModoEdicion] =
+    useState(false);
+
+  const [
+    postulacionEditando,
+    setPostulacionEditando
+  ] = useState(null);
+
+  const [
+    postulacionSeleccionada,
+    setPostulacionSeleccionada
+  ] = useState(null);
 
   const formularioInicial = {
     empresa: "",
@@ -73,7 +86,8 @@ function Postulaciones() {
     observaciones: ""
   };
 
-  const [formulario, setFormulario] = useState(formularioInicial);
+  const [formulario, setFormulario] =
+    useState(formularioInicial);
 
   useEffect(() => {
     cargarPostulaciones();
@@ -131,23 +145,43 @@ function Postulaciones() {
     setMostrarFormulario(true);
   };
 
+  const abrirDetalle = (postulacion) => {
+    setPostulacionSeleccionada(postulacion);
+  };
+
+  const cerrarDetalle = () => {
+    setPostulacionSeleccionada(null);
+  };
+
   const abrirEdicion = (postulacion) => {
+    setPostulacionSeleccionada(null);
+
     setModoEdicion(true);
     setPostulacionEditando(postulacion._id);
 
     setFormulario({
       empresa: postulacion.empresa || "",
       cargo: postulacion.cargo || "",
-      modalidad: postulacion.modalidad || "Remoto",
-      nivel: postulacion.nivel || "Junior",
-      estado: postulacion.estado || "Enviado",
-      prioridad: postulacion.prioridad || "Media",
+      modalidad:
+        postulacion.modalidad || "Remoto",
+      nivel:
+        postulacion.nivel || "Junior",
+      estado:
+        postulacion.estado || "Enviado",
+      prioridad:
+        postulacion.prioridad || "Media",
 
-      salario: postulacion.salario ?? "",
-      moneda: postulacion.moneda || "USD",
+      salario:
+        postulacion.salario ?? "",
 
-      ciudad: postulacion.ciudad || "",
-      pais: postulacion.pais || "Ecuador",
+      moneda:
+        postulacion.moneda || "USD",
+
+      ciudad:
+        postulacion.ciudad || "",
+
+      pais:
+        postulacion.pais || "Ecuador",
 
       tecnologias:
         postulacion.tecnologias?.join(", ") || "",
@@ -205,10 +239,13 @@ function Postulaciones() {
             ? Number(formulario.salario)
             : 0,
 
-        tecnologias: formulario.tecnologias
-          .split(",")
-          .map((tecnologia) => tecnologia.trim())
-          .filter(Boolean),
+        tecnologias:
+          formulario.tecnologias
+            .split(",")
+            .map((tecnologia) =>
+              tecnologia.trim()
+            )
+            .filter(Boolean),
 
         fechaEntrevista:
           formulario.fechaEntrevista || null
@@ -237,7 +274,7 @@ function Postulaciones() {
 
       alert(
         error.response?.data?.mensaje ||
-        "No se pudo guardar la postulación"
+          "No se pudo guardar la postulación"
       );
     }
   };
@@ -251,6 +288,13 @@ function Postulaciones() {
 
     try {
       await api.delete(`/applications/${id}`);
+
+      if (
+        postulacionSeleccionada?._id === id
+      ) {
+        cerrarDetalle();
+      }
+
       await cargarPostulaciones();
 
     } catch (error) {
@@ -261,8 +305,11 @@ function Postulaciones() {
     }
   };
 
-  const postulacionesFiltradas = postulaciones.filter(
-    (postulacion) => {
+  /*
+   * FILTROS
+   */
+  const postulacionesFiltradas =
+    postulaciones.filter((postulacion) => {
       const textoBusqueda = busqueda
         .trim()
         .toLowerCase();
@@ -282,11 +329,13 @@ function Postulaciones() {
 
       const coincideModalidad =
         modalidadFiltro === "" ||
-        postulacion.modalidad === modalidadFiltro;
+        postulacion.modalidad ===
+          modalidadFiltro;
 
       const coincidePrioridad =
         prioridadFiltro === "" ||
-        postulacion.prioridad === prioridadFiltro;
+        postulacion.prioridad ===
+          prioridadFiltro;
 
       const coincideNivel =
         nivelFiltro === "" ||
@@ -299,17 +348,23 @@ function Postulaciones() {
         coincidePrioridad &&
         coincideNivel
       );
-    }
-  );
+    });
 
+  /*
+   * ORDENAMIENTO
+   */
   const postulacionesOrdenadas = [
     ...postulacionesFiltradas
   ].sort((a, b) => {
     switch (orden) {
       case "antiguas":
         return (
-          new Date(a.fechaPostulacion || a.createdAt) -
-          new Date(b.fechaPostulacion || b.createdAt)
+          new Date(
+            a.fechaPostulacion || a.createdAt
+          ) -
+          new Date(
+            b.fechaPostulacion || b.createdAt
+          )
         );
 
       case "empresaAZ":
@@ -354,17 +409,200 @@ function Postulaciones() {
       case "recientes":
       default:
         return (
-          new Date(b.fechaPostulacion || b.createdAt) -
-          new Date(a.fechaPostulacion || a.createdAt)
+          new Date(
+            b.fechaPostulacion || b.createdAt
+          ) -
+          new Date(
+            a.fechaPostulacion || a.createdAt
+          )
         );
     }
   });
 
+  /*
+   * EXPORTAR CSV
+   */
+  const escaparCSV = (valor) => {
+    if (
+      valor === null ||
+      valor === undefined
+    ) {
+      return "";
+    }
+
+    const texto = String(valor)
+      .replace(/\r?\n/g, " ")
+      .replace(/"/g, '""');
+
+    return `"${texto}"`;
+  };
+
+  const formatearFechaCSV = (fecha) => {
+    if (!fecha) return "";
+
+    const fechaConvertida =
+      new Date(fecha);
+
+    if (
+      Number.isNaN(
+        fechaConvertida.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return fechaConvertida.toLocaleString(
+      "es-EC",
+      {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    );
+  };
+
+  const exportarCSV = () => {
+    if (
+      postulacionesOrdenadas.length === 0
+    ) {
+      alert(
+        "No hay postulaciones para exportar."
+      );
+
+      return;
+    }
+
+    const encabezados = [
+      "Empresa",
+      "Cargo",
+      "Estado",
+      "Modalidad",
+      "Nivel",
+      "Prioridad",
+      "Salario",
+      "Moneda",
+      "Ciudad",
+      "País",
+      "Tecnologías",
+      "Fecha de postulación",
+      "Fecha de entrevista",
+      "Plataforma entrevista",
+      "Contacto entrevistador",
+      "Enlace entrevista",
+      "Contacto RR.HH.",
+      "Correo RR.HH.",
+      "Teléfono RR.HH.",
+      "URL oferta",
+      "Notas entrevista",
+      "Observaciones"
+    ];
+
+    const filas =
+      postulacionesOrdenadas.map(
+        (postulacion) => [
+          postulacion.empresa || "",
+          postulacion.cargo || "",
+          postulacion.estado || "",
+          postulacion.modalidad || "",
+          postulacion.nivel || "",
+          postulacion.prioridad || "",
+          postulacion.salario ?? "",
+          postulacion.moneda || "USD",
+          postulacion.ciudad || "",
+          postulacion.pais || "",
+
+          Array.isArray(
+            postulacion.tecnologias
+          )
+            ? postulacion.tecnologias.join(
+                ", "
+              )
+            : "",
+
+          formatearFechaCSV(
+            postulacion.fechaPostulacion ||
+              postulacion.createdAt
+          ),
+
+          formatearFechaCSV(
+            postulacion.fechaEntrevista
+          ),
+
+          postulacion.plataformaEntrevista ||
+            "",
+
+          postulacion.contactoEntrevista ||
+            "",
+
+          postulacion.enlaceEntrevista ||
+            "",
+
+          postulacion.contactoRRHH || "",
+          postulacion.correoRRHH || "",
+          postulacion.telefonoRRHH || "",
+          postulacion.urlOferta || "",
+          postulacion.notasEntrevista || "",
+          postulacion.observaciones || ""
+        ]
+      );
+
+    const contenidoCSV = [
+      encabezados
+        .map(escaparCSV)
+        .join(";"),
+
+      ...filas.map((fila) =>
+        fila
+          .map(escaparCSV)
+          .join(";")
+      )
+    ].join("\n");
+
+    const blob = new Blob(
+      [
+        "\uFEFF" +
+          contenidoCSV
+      ],
+      {
+        type: "text/csv;charset=utf-8;"
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const enlace =
+      document.createElement("a");
+
+    const fechaActual =
+      new Date()
+        .toISOString()
+        .slice(0, 10);
+
+    enlace.href = url;
+
+    enlace.download =
+      `jobtrack-postulaciones-${fechaActual}.csv`;
+
+    document.body.appendChild(enlace);
+
+    enlace.click();
+
+    document.body.removeChild(enlace);
+
+    URL.revokeObjectURL(url);
+  };
+
+  /*
+   * PAGINACIÓN
+   */
   const totalPaginas = Math.max(
     1,
     Math.ceil(
       postulacionesOrdenadas.length /
-      postulacionesPorPagina
+        postulacionesPorPagina
     )
   );
 
@@ -403,7 +641,10 @@ function Postulaciones() {
 
   const irPaginaSiguiente = () => {
     setPaginaActual((pagina) =>
-      Math.min(totalPaginas, pagina + 1)
+      Math.min(
+        totalPaginas,
+        pagina + 1
+      )
     );
   };
 
@@ -412,6 +653,7 @@ function Postulaciones() {
 
       <div className="mx-auto max-w-7xl">
 
+        {/* ENCABEZADO */}
         <header className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-center">
 
           <div>
@@ -430,16 +672,34 @@ function Postulaciones() {
 
           </div>
 
-          <button
-            onClick={abrirNuevaPostulacion}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 md:w-auto"
-          >
-            <Plus size={20} />
-            Nueva postulación
-          </button>
+          <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
+
+            <button
+              type="button"
+              onClick={exportarCSV}
+              disabled={
+                postulacionesOrdenadas.length === 0
+              }
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
+            >
+              <Download size={20} />
+              Exportar CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={abrirNuevaPostulacion}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:w-auto"
+            >
+              <Plus size={20} />
+              Nueva postulación
+            </button>
+
+          </div>
 
         </header>
 
+        {/* FILTROS */}
         <section className="mb-6 rounded-2xl bg-white p-4 shadow-sm transition-colors dark:bg-slate-800 sm:p-5">
 
           <div className="flex items-center rounded-xl border border-slate-300 px-4 dark:border-slate-600">
@@ -470,60 +730,102 @@ function Postulaciones() {
               }
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
             >
-              <option value="">Todos los estados</option>
-              <option value="Enviado">Enviado</option>
-              <option value="En revisión">En revisión</option>
-              <option value="Prueba Técnica">Prueba Técnica</option>
-              <option value="Entrevista">Entrevista</option>
-              <option value="Oferta">Oferta</option>
-              <option value="Contratado">Contratado</option>
-              <option value="Rechazado">Rechazado</option>
+              <option value="">
+                Todos los estados
+              </option>
+              <option value="Enviado">
+                Enviado
+              </option>
+              <option value="En revisión">
+                En revisión
+              </option>
+              <option value="Prueba Técnica">
+                Prueba Técnica
+              </option>
+              <option value="Entrevista">
+                Entrevista
+              </option>
+              <option value="Oferta">
+                Oferta
+              </option>
+              <option value="Contratado">
+                Contratado
+              </option>
+              <option value="Rechazado">
+                Rechazado
+              </option>
             </select>
 
             <select
               value={modalidadFiltro}
               onChange={(e) =>
-                setModalidadFiltro(e.target.value)
+                setModalidadFiltro(
+                  e.target.value
+                )
               }
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
             >
               <option value="">
                 Todas las modalidades
               </option>
-              <option value="Remoto">Remoto</option>
-              <option value="Híbrido">Híbrido</option>
-              <option value="Presencial">Presencial</option>
+              <option value="Remoto">
+                Remoto
+              </option>
+              <option value="Híbrido">
+                Híbrido
+              </option>
+              <option value="Presencial">
+                Presencial
+              </option>
             </select>
 
             <select
               value={prioridadFiltro}
               onChange={(e) =>
-                setPrioridadFiltro(e.target.value)
+                setPrioridadFiltro(
+                  e.target.value
+                )
               }
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
             >
               <option value="">
                 Todas las prioridades
               </option>
-              <option value="Alta">Alta</option>
-              <option value="Media">Media</option>
-              <option value="Baja">Baja</option>
+              <option value="Alta">
+                Alta
+              </option>
+              <option value="Media">
+                Media
+              </option>
+              <option value="Baja">
+                Baja
+              </option>
             </select>
 
             <select
               value={nivelFiltro}
               onChange={(e) =>
-                setNivelFiltro(e.target.value)
+                setNivelFiltro(
+                  e.target.value
+                )
               }
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
             >
               <option value="">
                 Todos los niveles
               </option>
-              <option value="Practicante">Practicante</option>
-              <option value="Junior">Junior</option>
-              <option value="Semi Senior">Semi Senior</option>
-              <option value="Senior">Senior</option>
+              <option value="Practicante">
+                Practicante
+              </option>
+              <option value="Junior">
+                Junior
+              </option>
+              <option value="Semi Senior">
+                Semi Senior
+              </option>
+              <option value="Senior">
+                Senior
+              </option>
             </select>
 
           </div>
@@ -619,173 +921,156 @@ function Postulaciones() {
 
         </section>
 
-        {/* VISTA MÓVIL */}
+        {/* MÓVIL */}
         <section className="space-y-4 lg:hidden">
 
           {postulacionesPaginadas.length > 0 ? (
 
-            postulacionesPaginadas.map((postulacion) => (
+            postulacionesPaginadas.map(
+              (postulacion) => (
 
-              <div
-                key={postulacion._id}
-                className="rounded-2xl bg-white p-5 shadow-sm transition-colors dark:bg-slate-800"
-              >
+                <div
+                  key={postulacion._id}
+                  className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-800"
+                >
 
-                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-4">
 
-                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
 
-                    <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
-                      <BriefcaseBusiness size={20} />
+                      <div className="shrink-0 rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
+                        <BriefcaseBusiness
+                          size={20}
+                        />
+                      </div>
+
+                      <div className="min-w-0">
+
+                        <h2 className="truncate font-bold text-slate-900 dark:text-white">
+                          {postulacion.empresa}
+                        </h2>
+
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                          {postulacion.cargo}
+                        </p>
+
+                      </div>
+
                     </div>
 
-                    <div className="min-w-0">
-
-                      <h2 className="truncate font-bold text-slate-900 dark:text-white">
-                        {postulacion.empresa}
-                      </h2>
-
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        {postulacion.cargo}
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                  <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                    {postulacion.estado}
-                  </span>
-
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-
-                  <DatoMovil
-                    icono={<MapPin size={16} />}
-                    titulo="Modalidad"
-                    valor={
-                      postulacion.modalidad ||
-                      "No especificada"
-                    }
-                  />
-
-                  <DatoMovil
-                    icono={<Layers3 size={16} />}
-                    titulo="Nivel"
-                    valor={
-                      postulacion.nivel ||
-                      "No especificado"
-                    }
-                  />
-
-                  <DatoMovil
-                    icono={<Flag size={16} />}
-                    titulo="Prioridad"
-                    valor={
-                      postulacion.prioridad ||
-                      "Media"
-                    }
-                  />
-
-                  <DatoMovil
-                    icono={<CalendarDays size={16} />}
-                    titulo="Entrevista"
-                    valor={
-                      postulacion.fechaEntrevista
-                        ? new Date(
-                            postulacion.fechaEntrevista
-                          ).toLocaleDateString(
-                            "es-EC",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            }
-                          )
-                        : "Sin fecha"
-                    }
-                  />
-
-                </div>
-
-                {postulacion.fechaEntrevista && (
-
-                  <div className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-
-                    Entrevista:{" "}
-
-                    <span className="font-semibold">
-                      {new Date(
-                        postulacion.fechaEntrevista
-                      ).toLocaleString(
-                        "es-EC",
-                        {
-                          dateStyle: "medium",
-                          timeStyle: "short"
-                        }
-                      )}
+                    <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                      {postulacion.estado}
                     </span>
 
                   </div>
 
-                )}
+                  <div className="mt-5 grid grid-cols-2 gap-3">
 
-                <div className="mt-5 flex gap-3 border-t border-slate-100 pt-4 dark:border-slate-700">
+                    <DatoMovil
+                      icono={
+                        <MapPin size={16} />
+                      }
+                      titulo="Modalidad"
+                      valor={
+                        postulacion.modalidad ||
+                        "No especificada"
+                      }
+                    />
 
-                  <button
-                    onClick={() =>
-                      abrirEdicion(postulacion)
-                    }
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-slate-700"
-                  >
-                    <Pencil size={17} />
-                    Editar
-                  </button>
+                    <DatoMovil
+                      icono={
+                        <Layers3 size={16} />
+                      }
+                      titulo="Nivel"
+                      valor={
+                        postulacion.nivel ||
+                        "No especificado"
+                      }
+                    />
 
-                  <button
-                    onClick={() =>
-                      eliminarPostulacion(
-                        postulacion._id
-                      )
-                    }
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
-                  >
-                    <Trash2 size={17} />
-                    Eliminar
-                  </button>
+                    <DatoMovil
+                      icono={
+                        <Flag size={16} />
+                      }
+                      titulo="Prioridad"
+                      valor={
+                        postulacion.prioridad ||
+                        "Media"
+                      }
+                    />
+
+                    <DatoMovil
+                      icono={
+                        <CalendarDays
+                          size={16}
+                        />
+                      }
+                      titulo="Entrevista"
+                      valor={
+                        postulacion.fechaEntrevista
+                          ? new Date(
+                              postulacion.fechaEntrevista
+                            ).toLocaleDateString(
+                              "es-EC"
+                            )
+                          : "Sin fecha"
+                      }
+                    />
+
+                  </div>
+
+                  {/* ACCIONES MÓVIL */}
+                  <div className="mt-5 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 dark:border-slate-700">
+
+                    <button
+                      onClick={() =>
+                        abrirDetalle(postulacion)
+                      }
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-2 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                    >
+                      <Eye size={16} />
+                      Ver
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        abrirEdicion(postulacion)
+                      }
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 px-2 py-2.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-slate-700"
+                    >
+                      <Pencil size={16} />
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        eliminarPostulacion(
+                          postulacion._id
+                        )
+                      }
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 px-2 py-2.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                    >
+                      <Trash2 size={16} />
+                      Eliminar
+                    </button>
+
+                  </div>
 
                 </div>
 
-              </div>
-
-            ))
+              )
+            )
 
           ) : (
 
-            <div className="rounded-2xl bg-white px-6 py-14 text-center shadow-sm dark:bg-slate-800">
-
-              <Search
-                size={38}
-                className="mx-auto text-slate-300 dark:text-slate-600"
-              />
-
-              <p className="mt-3 font-semibold text-slate-700 dark:text-slate-300">
-                No encontramos postulaciones
-              </p>
-
-              <p className="mt-1 text-sm text-slate-400">
-                Prueba cambiando o limpiando los filtros.
-              </p>
-
-            </div>
+            <EstadoVacio />
 
           )}
 
         </section>
 
-        {/* VISTA ESCRITORIO */}
-        <section className="hidden overflow-hidden rounded-2xl bg-white shadow-sm transition-colors dark:bg-slate-800 lg:block">
+        {/* ESCRITORIO */}
+        <section className="hidden overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-slate-800 lg:block">
 
           <div className="overflow-x-auto">
 
@@ -848,7 +1133,11 @@ function Postulaciones() {
                           <div className="flex items-center gap-3">
 
                             <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-slate-700 dark:text-blue-400">
-                              <BriefcaseBusiness size={20} />
+
+                              <BriefcaseBusiness
+                                size={20}
+                              />
+
                             </div>
 
                             <span className="font-semibold text-slate-900 dark:text-white">
@@ -891,18 +1180,34 @@ function Postulaciones() {
                           {postulacion.fechaEntrevista
                             ? new Date(
                                 postulacion.fechaEntrevista
-                              ).toLocaleString("es-EC")
+                              ).toLocaleString(
+                                "es-EC"
+                              )
                             : "Sin fecha"}
 
                         </td>
 
                         <td className="px-6 py-5">
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
 
                             <button
                               onClick={() =>
-                                abrirEdicion(postulacion)
+                                abrirDetalle(
+                                  postulacion
+                                )
+                              }
+                              className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-white"
+                              title="Ver detalles"
+                            >
+                              <Eye size={18} />
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                abrirEdicion(
+                                  postulacion
+                                )
                               }
                               className="rounded-lg p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-blue-400"
                               title="Editar"
@@ -937,22 +1242,9 @@ function Postulaciones() {
 
                     <td
                       colSpan="8"
-                      className="px-6 py-16 text-center"
+                      className="px-6 py-16"
                     >
-
-                      <Search
-                        size={38}
-                        className="mx-auto text-slate-300 dark:text-slate-600"
-                      />
-
-                      <p className="mt-3 font-semibold text-slate-700 dark:text-slate-300">
-                        No encontramos postulaciones
-                      </p>
-
-                      <p className="mt-1 text-sm text-slate-400">
-                        Prueba cambiando o limpiando los filtros.
-                      </p>
-
+                      <EstadoVacio />
                     </td>
 
                   </tr>
@@ -967,6 +1259,7 @@ function Postulaciones() {
 
         </section>
 
+        {/* PAGINACIÓN */}
         {postulacionesOrdenadas.length > 0 && (
 
           <div className="mt-4 flex flex-col items-center justify-between gap-4 rounded-2xl bg-white px-4 py-4 shadow-sm dark:bg-slate-800 sm:flex-row sm:px-6">
@@ -975,26 +1268,21 @@ function Postulaciones() {
               type="button"
               onClick={irPaginaAnterior}
               disabled={paginaSegura === 1}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 sm:w-auto"
             >
               <ChevronLeft size={17} />
               Anterior
             </button>
 
             <p className="text-sm text-slate-500 dark:text-slate-400">
-
               Página{" "}
-
               <span className="font-semibold text-slate-800 dark:text-white">
                 {paginaSegura}
               </span>
-
               {" de "}
-
               <span className="font-semibold text-slate-800 dark:text-white">
                 {totalPaginas}
               </span>
-
             </p>
 
             <button
@@ -1003,7 +1291,7 @@ function Postulaciones() {
               disabled={
                 paginaSegura === totalPaginas
               }
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 sm:w-auto"
             >
               Siguiente
               <ChevronRight size={17} />
@@ -1014,6 +1302,334 @@ function Postulaciones() {
         )}
 
       </div>
+
+      {/* =============================== */}
+      {/* MODAL VER DETALLES */}
+      {/* =============================== */}
+
+      {postulacionSeleccionada && (
+
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4"
+          onClick={cerrarDetalle}
+        >
+
+          <div
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+            className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-800 sm:rounded-3xl sm:p-7"
+          >
+
+            <div className="flex items-start justify-between gap-4">
+
+              <div className="min-w-0">
+
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  Detalle de postulación
+                </p>
+
+                <h2 className="mt-1 break-words text-2xl font-bold text-slate-900 dark:text-white">
+                  {postulacionSeleccionada.empresa}
+                </h2>
+
+                <p className="mt-1 break-words text-slate-500 dark:text-slate-400">
+                  {postulacionSeleccionada.cargo}
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={cerrarDetalle}
+                className="shrink-0 rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                <X size={22} />
+              </button>
+
+            </div>
+
+            {/* BADGES */}
+            <div className="mt-5 flex flex-wrap gap-2">
+
+              <Badge>
+                {postulacionSeleccionada.estado}
+              </Badge>
+
+              <Badge>
+                {postulacionSeleccionada.modalidad ||
+                  "Sin modalidad"}
+              </Badge>
+
+              <Badge>
+                {postulacionSeleccionada.nivel ||
+                  "Sin nivel"}
+              </Badge>
+
+              <Badge>
+                Prioridad{" "}
+                {postulacionSeleccionada.prioridad ||
+                  "Media"}
+              </Badge>
+
+            </div>
+
+            {/* DATOS PRINCIPALES */}
+            <SeccionDetalle titulo="Información general">
+
+              <Detalle
+                icono={
+                  <DollarSign size={18} />
+                }
+                titulo="Salario"
+                valor={
+                  postulacionSeleccionada.salario
+                    ? `${
+                        postulacionSeleccionada.moneda ||
+                        "USD"
+                      } ${postulacionSeleccionada.salario}`
+                    : "No especificado"
+                }
+              />
+
+              <Detalle
+                icono={
+                  <MapPin size={18} />
+                }
+                titulo="Ubicación"
+                valor={
+                  [
+                    postulacionSeleccionada.ciudad,
+                    postulacionSeleccionada.pais
+                  ]
+                    .filter(Boolean)
+                    .join(", ") ||
+                  "No especificada"
+                }
+              />
+
+              <Detalle
+                icono={
+                  <CalendarDays
+                    size={18}
+                  />
+                }
+                titulo="Fecha de postulación"
+                valor={
+                  postulacionSeleccionada.fechaPostulacion ||
+                  postulacionSeleccionada.createdAt
+                    ? new Date(
+                        postulacionSeleccionada.fechaPostulacion ||
+                          postulacionSeleccionada.createdAt
+                      ).toLocaleDateString(
+                        "es-EC"
+                      )
+                    : "Sin fecha"
+                }
+              />
+
+            </SeccionDetalle>
+
+            {/* TECNOLOGÍAS */}
+            {postulacionSeleccionada.tecnologias
+              ?.length > 0 && (
+
+              <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-700">
+
+                <h3 className="font-bold text-slate-900 dark:text-white">
+                  Tecnologías
+                </h3>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+
+                  {postulacionSeleccionada.tecnologias.map(
+                    (tecnologia) => (
+
+                      <span
+                        key={tecnologia}
+                        className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+                      >
+                        {tecnologia}
+                      </span>
+
+                    )
+                  )}
+
+                </div>
+
+              </div>
+
+            )}
+
+            {/* RRHH */}
+            <SeccionDetalle titulo="Recursos Humanos">
+
+              <Detalle
+                icono={
+                  <UserRound size={18} />
+                }
+                titulo="Contacto"
+                valor={
+                  postulacionSeleccionada.contactoRRHH ||
+                  "No especificado"
+                }
+              />
+
+              <Detalle
+                icono={
+                  <Mail size={18} />
+                }
+                titulo="Correo"
+                valor={
+                  postulacionSeleccionada.correoRRHH ||
+                  "No especificado"
+                }
+              />
+
+              <Detalle
+                icono={
+                  <Phone size={18} />
+                }
+                titulo="Teléfono"
+                valor={
+                  postulacionSeleccionada.telefonoRRHH ||
+                  "No especificado"
+                }
+              />
+
+            </SeccionDetalle>
+
+            {/* ENTREVISTA */}
+            <SeccionDetalle titulo="Entrevista">
+
+              <Detalle
+                icono={
+                  <CalendarDays
+                    size={18}
+                  />
+                }
+                titulo="Fecha"
+                valor={
+                  postulacionSeleccionada.fechaEntrevista
+                    ? new Date(
+                        postulacionSeleccionada.fechaEntrevista
+                      ).toLocaleString(
+                        "es-EC"
+                      )
+                    : "Sin entrevista programada"
+                }
+              />
+
+              <Detalle
+                icono={
+                  <Video size={18} />
+                }
+                titulo="Plataforma"
+                valor={
+                  postulacionSeleccionada.plataformaEntrevista ||
+                  "No especificada"
+                }
+              />
+
+              <Detalle
+                icono={
+                  <UserRound size={18} />
+                }
+                titulo="Entrevistador"
+                valor={
+                  postulacionSeleccionada.contactoEntrevista ||
+                  "No especificado"
+                }
+              />
+
+            </SeccionDetalle>
+
+            {/* NOTAS */}
+            {postulacionSeleccionada.notasEntrevista && (
+
+              <CajaTexto
+                titulo="Notas para la entrevista"
+                contenido={
+                  postulacionSeleccionada.notasEntrevista
+                }
+              />
+
+            )}
+
+            {postulacionSeleccionada.observaciones && (
+
+              <CajaTexto
+                titulo="Observaciones generales"
+                contenido={
+                  postulacionSeleccionada.observaciones
+                }
+              />
+
+            )}
+
+            {/* ENLACES */}
+            <div className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-6 dark:border-slate-700 sm:flex-row sm:flex-wrap">
+
+              {postulacionSeleccionada.urlOferta && (
+
+                <a
+                  href={
+                    postulacionSeleccionada.urlOferta
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-600 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-700 sm:w-auto"
+                >
+                  <ExternalLink
+                    size={17}
+                  />
+                  Abrir oferta
+                </a>
+
+              )}
+
+              {postulacionSeleccionada.enlaceEntrevista &&
+                postulacionSeleccionada.plataformaEntrevista !==
+                  "Presencial" && (
+
+                <a
+                  href={
+                    postulacionSeleccionada.enlaceEntrevista
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:w-auto"
+                >
+                  <Video size={17} />
+                  Abrir reunión
+                </a>
+
+              )}
+
+              <button
+                type="button"
+                onClick={() =>
+                  abrirEdicion(
+                    postulacionSeleccionada
+                  )
+                }
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
+              >
+                <Pencil size={17} />
+                Editar postulación
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
+      {/* =============================== */}
+      {/* FORMULARIO CREAR / EDITAR */}
+      {/* =============================== */}
 
       {mostrarFormulario && (
 
@@ -1040,6 +1656,7 @@ function Postulaciones() {
               </div>
 
               <button
+                type="button"
                 onClick={cerrarFormulario}
                 className="shrink-0 rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
               >
@@ -1189,7 +1806,9 @@ function Postulaciones() {
                   value={formulario.urlOferta}
                   onChange={manejarCambio}
                   placeholder="https://empresa.com/oferta..."
-                  icono={<LinkIcon size={18} />}
+                  icono={
+                    <LinkIcon size={18} />
+                  }
                 />
 
               </div>
@@ -1205,7 +1824,9 @@ function Postulaciones() {
                 value={formulario.contactoRRHH}
                 onChange={manejarCambio}
                 placeholder="Ej. Ana Pérez"
-                icono={<UserRound size={18} />}
+                icono={
+                  <UserRound size={18} />
+                }
               />
 
               <CampoIcono
@@ -1215,7 +1836,9 @@ function Postulaciones() {
                 value={formulario.correoRRHH}
                 onChange={manejarCambio}
                 placeholder="ana@empresa.com"
-                icono={<Mail size={18} />}
+                icono={
+                  <Mail size={18} />
+                }
               />
 
               <CampoIcono
@@ -1225,7 +1848,9 @@ function Postulaciones() {
                 value={formulario.telefonoRRHH}
                 onChange={manejarCambio}
                 placeholder="Ej. 0999999999"
-                icono={<Phone size={18} />}
+                icono={
+                  <Phone size={18} />
+                }
               />
 
               <SeccionTitulo
@@ -1244,7 +1869,9 @@ function Postulaciones() {
               <SelectCampo
                 label="Plataforma"
                 name="plataformaEntrevista"
-                value={formulario.plataformaEntrevista}
+                value={
+                  formulario.plataformaEntrevista
+                }
                 onChange={manejarCambio}
                 opciones={[
                   "",
@@ -1262,19 +1889,27 @@ function Postulaciones() {
                 label="Enlace de entrevista"
                 name="enlaceEntrevista"
                 type="url"
-                value={formulario.enlaceEntrevista}
+                value={
+                  formulario.enlaceEntrevista
+                }
                 onChange={manejarCambio}
                 placeholder="https://meet.google.com/..."
-                icono={<LinkIcon size={18} />}
+                icono={
+                  <LinkIcon size={18} />
+                }
               />
 
               <CampoIcono
                 label="Contacto / entrevistador"
                 name="contactoEntrevista"
-                value={formulario.contactoEntrevista}
+                value={
+                  formulario.contactoEntrevista
+                }
                 onChange={manejarCambio}
                 placeholder="Ej. María López"
-                icono={<UserRound size={18} />}
+                icono={
+                  <UserRound size={18} />
+                }
               />
 
               <div className="md:col-span-2">
@@ -1292,7 +1927,9 @@ function Postulaciones() {
 
                   <textarea
                     name="notasEntrevista"
-                    value={formulario.notasEntrevista}
+                    value={
+                      formulario.notasEntrevista
+                    }
                     onChange={manejarCambio}
                     rows="4"
                     placeholder="Ej. Repasar Node.js, Express y MongoDB..."
@@ -1311,7 +1948,9 @@ function Postulaciones() {
 
                 <textarea
                   name="observaciones"
-                  value={formulario.observaciones}
+                  value={
+                    formulario.observaciones
+                  }
                   onChange={manejarCambio}
                   rows="4"
                   placeholder="Notas generales sobre la postulación..."
@@ -1348,6 +1987,105 @@ function Postulaciones() {
         </div>
 
       )}
+
+    </div>
+  );
+}
+
+/* ========================= */
+/* COMPONENTES AUXILIARES */
+/* ========================= */
+
+function EstadoVacio() {
+  return (
+    <div className="text-center">
+
+      <Search
+        size={38}
+        className="mx-auto text-slate-300 dark:text-slate-600"
+      />
+
+      <p className="mt-3 font-semibold text-slate-700 dark:text-slate-300">
+        No encontramos postulaciones
+      </p>
+
+      <p className="mt-1 text-sm text-slate-400">
+        Prueba cambiando o limpiando los filtros.
+      </p>
+
+    </div>
+  );
+}
+
+function Badge({ children }) {
+  return (
+    <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+      {children}
+    </span>
+  );
+}
+
+function SeccionDetalle({
+  titulo,
+  children
+}) {
+  return (
+    <section className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-700">
+
+      <h3 className="font-bold text-slate-900 dark:text-white">
+        {titulo}
+      </h3>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {children}
+      </div>
+
+    </section>
+  );
+}
+
+function Detalle({
+  icono,
+  titulo,
+  valor
+}) {
+  return (
+    <div className="flex min-w-0 items-start gap-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-700">
+
+      <span className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400">
+        {icono}
+      </span>
+
+      <div className="min-w-0">
+
+        <p className="text-xs text-slate-400">
+          {titulo}
+        </p>
+
+        <p className="mt-1 break-words text-sm font-semibold text-slate-700 dark:text-slate-200">
+          {valor}
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+function CajaTexto({
+  titulo,
+  contenido
+}) {
+  return (
+    <div className="mt-5 rounded-xl bg-slate-50 p-4 dark:bg-slate-700">
+
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        {titulo}
+      </p>
+
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+        {contenido}
+      </p>
 
     </div>
   );
