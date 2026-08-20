@@ -1,6 +1,24 @@
 const express = require("express");
 const cors = require("cors");
+const dns = require("dns");
+
 require("dotenv").config();
+
+/*
+|--------------------------------------------------------------------------
+| DNS
+|--------------------------------------------------------------------------
+|
+| Forzamos a Node.js a utilizar Google DNS.
+| Esto ayuda con errores querySrv ECONNREFUSED
+| al conectarse a MongoDB Atlas mediante mongodb+srv://
+|
+*/
+
+dns.setServers([
+  "8.8.8.8",
+  "8.8.4.4"
+]);
 
 const connectDB = require("./config/db");
 
@@ -37,8 +55,11 @@ app.use(
   cors({
     origin: (origin, callback) => {
       /*
-       * Permite peticiones sin origin:
-       * Postman, Thunder Client, apps móviles, etc.
+       * Permite solicitudes sin origin,
+       * por ejemplo:
+       * Thunder Client
+       * Postman
+       * apps móviles
        */
       if (!origin) {
         return callback(null, true);
@@ -105,16 +126,13 @@ app.get("/", (req, res) => {
 |--------------------------------------------------------------------------
 | HEALTH CHECK
 |--------------------------------------------------------------------------
-|
-| Esta ruta sirve para Render/Railway y para comprobar
-| rápidamente que el backend está funcionando.
-|
 */
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     ok: true,
     servicio: "JobTrack Pro API",
+    estado: "online",
     timestamp: new Date().toISOString()
   });
 });
